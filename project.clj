@@ -13,11 +13,13 @@
                  [org.apache.logging.log4j/log4j-core "2.6.2"]
                  ; Configuration library.
                  [levand/immuconf "0.1.0"]
-                 ; Ring + Compojure
+                 ; Ring + Compojure powered by Jetty.
                  [compojure "1.5.1"]
                  [ring/ring-jetty-adapter "1.5.0"]
                  ; ring-defaults simplifies adding middleware for sane defaults.
-                 [ring/ring-defaults "0.2.1"]]
+                 [ring/ring-defaults "0.2.1"]
+                 ; Templating library.
+                 [hiccup "1.0.5"]]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]
