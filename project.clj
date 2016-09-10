@@ -21,7 +21,7 @@
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]
-  :ring {:handler formlogic.handler/app
+  :ring {:handler formlogic.core/app
          :nrepl {:start? true
                  :port 9998}}
   :profiles {:uberjar {:aot :all}
