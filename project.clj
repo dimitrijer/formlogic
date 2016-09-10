@@ -9,7 +9,9 @@
                  [org.slf4j/slf4j-api "1.7.21"]
                  [org.apache.logging.log4j/log4j-slf4j-impl "2.6.2"]
                  [org.apache.logging.log4j/log4j-api "2.6.2"]
-                 [org.apache.logging.log4j/log4j-core "2.6.2"]]
+                 [org.apache.logging.log4j/log4j-core "2.6.2"]
+                 ; Configuration library.
+                 [levand/immuconf "0.1.0"]]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
