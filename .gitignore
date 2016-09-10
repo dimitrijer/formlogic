@@ -1,3 +1,4 @@
+# Lein automatic entries.
 /target
 /classes
 /checkouts
@@ -9,3 +10,5 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
+# Log files.
+log
