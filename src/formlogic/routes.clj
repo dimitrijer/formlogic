@@ -9,6 +9,7 @@
 (defroutes app-routes
   (GET "/" [] () (resp/redirect "/login"))
   (GET "/login" [] (views/login-page))
+  (GET "/register" [] (views/register-page))
   (POST "/login" [& params] (handlers/login params))
   (route/not-found views/not-found-page))
 

@@ -1,5 +1,6 @@
 (ns formlogic.views
-  (:require [hiccup.element :as elem])
+  (:require [hiccup.element :as elem]
+            [formlogic.user.account :as account])
   (:use [hiccup.page :only (html5 include-css include-js)]
         [hiccup.core :only (h)]
         [hiccup.form]
@@ -43,7 +44,7 @@
         [:pre (h details)]]))))
 
 ;; Should be a function, since *anti-forgery-token* is bound to a session, and
-;; this is defined as soon as source is eval'd
+;; this is defined as soon as source is eval'd.
 (defn login-page []
   (page-template
     "Login"
@@ -66,9 +67,9 @@
                       :name "userEmail"
                       :ng-model "user.email"} "email")]]
       [:div {:class "row alert alert-danger" :role "alert" :ng-show "loginForm.userEmail.$error.pattern"}
-       [:span {:class "glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
-       [:span {:class "sr-only"} "Error: "]
-       " Unesite ispravnu email adresu."]
+       [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
+       [:span {:class "col-lg-1 sr-only"} "Error: "]
+       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu."]]
       [:div {:class "row form-group"}
        (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
        [:div {:class "col-lg-10"}
@@ -82,3 +83,5 @@
         [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(loginForm.$valid)"} "Prijava"]]
        [:div {:class "col-lg-4"}
         (elem/link-to {:class "btn btn-default btn-block"} "/register" "Registracija")]]]]))
+
+(defn register-page [] (account/register-user))

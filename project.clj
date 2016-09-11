@@ -21,7 +21,12 @@
                  ;; ring-defaults simplifies adding middleware for sane defaults.
                  [ring/ring-defaults "0.2.1"]
                  ;; Templating library.
-                 [hiccup "1.0.5"]]
+                 [hiccup "1.0.5"]
+                 ;; Mailing library.
+                 [com.draines/postal "2.0.0"]
+                 ;; DB stuff.
+                 [yesql "0.5.3"]
+                 [org.postgresql/postgresql "9.4-1201-jdbc41"]]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]
