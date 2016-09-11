@@ -6,7 +6,7 @@
             [formlogic.views :as views]))
 
 (defroutes app-routes
-  (GET "/" [] "Hello World")
+  (GET "/" [] views/home-page)
   (GET "/login" [] (views/page "Login" [:h1 "Olalala"]))
   (route/not-found "Not Found"))
 

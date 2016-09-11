@@ -16,6 +16,8 @@
                  ; Ring + Compojure powered by Jetty.
                  [compojure "1.5.1"]
                  [ring/ring-jetty-adapter "1.5.0"]
+                 ; Some utility functions for working with HTTP response codes.
+                 [metosin/ring-http-response "0.8.0"]
                  ; ring-defaults simplifies adding middleware for sane defaults.
                  [ring/ring-defaults "0.2.1"]
                  ; Templating library.
