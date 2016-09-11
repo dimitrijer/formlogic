@@ -15,4 +15,5 @@
 (def app
   (-> (wrap-defaults #'app-routes site-defaults)
       handlers/wrap-catch-exceptions
-      handlers/wrap-log-request))
+      handlers/wrap-log-request
+      handlers/wrap-500))

@@ -1,6 +1,7 @@
 (ns formlogic.views
   (:require [hiccup.element :as elem])
   (:use [hiccup.page :only (html5 include-css include-js)]
+        [hiccup.core :only (h)]
         [hiccup.form]
         [ring.util.anti-forgery]))
 
@@ -22,9 +23,24 @@
   (page-template
     "404 - Stranica ne postoji"
     [:div {:class "im-centered well"}
-     [:h1 {:class "info-warning"} "Stranica nije nađena!"]
+     [:h1 {:class "text-warning"} "Stranica nije nađena!"]
      [:p "Tražena stranica ne postoji."]
      (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]))
+
+(defn internal-error-page 
+  ([]
+   (internal-error-page nil))
+  ([details]
+   (page-template
+     "500 - Interna greška"
+     [:div {:class "im-centered-wide well"}
+      [:h1 {:class "text-danger"} "Interna greška!"]
+      [:p "Nešto nije u redu, radimo na tome..."]
+      (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]
+      (when details
+        [:div {:class "im-centered-wide"}
+        [:p "Detalji:"]
+        [:pre (h details)]]))))
 
 ;; Should be a function, since *anti-forgery-token* is bound to a session, and
 ;; this is defined as soon as source is eval'd

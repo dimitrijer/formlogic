@@ -1,7 +1,9 @@
 (ns formlogic.handlers
   (:require [clojure.tools.logging :as log]
+            [clojure.string :as str]
             [ring.util.http-status :as status]
-            [clojure.string :as str]))
+            [ring.util.http-response :as resp]
+            [formlogic.views :as views]))
 
 (defn wrap-log-request [handler]
   "Middleware that logs each request."
@@ -32,10 +34,22 @@
          (catch Exception e
            (do
              (log/error e "Unhandled exception in handler!")
-             {:status 500})))))
+             ;; We wrap exception and stack trace in response body. These will
+             ;; get picked up by wrap-500 and it will make a nice HTML page.
+             (resp/internal-server-error
+               (str/join "\n" (conj (map str (.getStackTrace e)) (.toString e)))))))))
+
+(defn wrap-500 [handler]
+  "Middleware that replaces all 500 responses with a custom page."
+  (fn [req]
+    (let [response-map (handler req)
+          status (:status response-map)]
+      (if (= 500 status)
+        (-> (resp/internal-server-error (views/internal-error-page (:body response-map)))
+            (resp/content-type "text/html")
+            (resp/charset "utf-8"))
+        response-map))))
 
 (defn login [params]
   (let [{:keys [email password]} params]
-    (throw (NullPointerException.))
-    (log/spy params)
-    {:status 400}))
+    (resp/internal-server-error "amigaaaawd")))
