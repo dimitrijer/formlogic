@@ -1,15 +1,18 @@
 (ns formlogic.routes
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
+            [ring.util.response :as resp]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [formlogic.handlers :refer [wrap-log-request]]
+            [formlogic.handlers :as handlers]
             [formlogic.views :as views]))
 
 (defroutes app-routes
-  (GET "/" [] views/home-page)
-  (GET "/login" [] (views/page "Login" [:h1 "Olalala"]))
-  (route/not-found "Not Found"))
+  (GET "/" [] () (resp/redirect "/login"))
+  (GET "/login" [] (views/login-page))
+  (POST "/login" [& params] (handlers/login params))
+  (route/not-found views/not-found-page))
 
 (def app
-  (-> (wrap-defaults app-routes site-defaults)
-      wrap-log-request))
+  (-> (wrap-defaults #'app-routes site-defaults)
+      handlers/wrap-catch-exceptions
+      handlers/wrap-log-request))

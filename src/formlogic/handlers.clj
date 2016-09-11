@@ -16,7 +16,26 @@
             status-code (:status response-map)
             status-name (status/get-name status-code)
             elapsed-time (- (System/currentTimeMillis) current-time)]
-        (log/debugf "Finished %s => [%d %s] in %dms by (%s)" request-method status-code status-name elapsed-time
+        (log/debugf "Finished %s [%s => %d %s] in %dms by (%s)"
+                    request-method
+                    uri
+                    status-code
+                    status-name
+                    elapsed-time
                     remote-addr)
         response-map))))
 
+(defn wrap-catch-exceptions [handler]
+  "Middleware that catches all exceptions in business logic."
+  (fn [req]
+    (try (handler req)
+         (catch Exception e
+           (do
+             (log/error e "Unhandled exception in handler!")
+             {:status 500})))))
+
+(defn login [params]
+  (let [{:keys [email password]} params]
+    (throw (NullPointerException.))
+    (log/spy params)
+    {:status 400}))
