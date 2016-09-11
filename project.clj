@@ -26,7 +26,8 @@
                  [com.draines/postal "2.0.0"]
                  ;; DB stuff.
                  [yesql "0.5.3"]
-                 [org.postgresql/postgresql "9.4-1201-jdbc41"]]
+                 [org.postgresql/postgresql "9.4-1201-jdbc41"]
+                 [instaparse "1.4.3"]]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]

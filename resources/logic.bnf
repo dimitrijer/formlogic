@@ -1,0 +1,23 @@
+WellFormedFormula = Quantifier LCURLY WellFormedFormula RCURLY | Disjunction
+Quantifier = Quantifier SingleQuantifier | SingleQuantifier | epsilon
+SingleQuantifier = FOREACH LITERAL | EXISTS LITERAL
+Disjunction = Disjunction OR Conjunction | Conjunction
+Conjunction = Conjunction AND Implication | Implication
+Implication = Implication ARROW Term | Term
+Term = LPAREN WellFormedFormula RPAREN | NEG WellFormedFormula | Predicate | LITERAL
+Predicate = PRED LPAREN Arguments RPAREN
+Arguments = Arguments COMMA LITERAL | LITERAL
+
+LITERAL = #'[a-z]+'
+COMMA = #','
+LPAREN = #'\('
+RPAREN = #'\)'
+LCURLY = #'\{'
+RCURLY = #'\}'
+NEG = #'~'
+ARROW = #'=>'
+AND = #'&&'
+OR = #'||'
+PRED = #'[A-Z][a-z]*'
+FOREACH = #'\\A'
+EXISTS = #'\\E'
