@@ -37,8 +37,8 @@
       [:h1 {:class "text-danger"} "Interna greška!"]
       [:p "Nešto nije u redu, radimo na tome..."]
       (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]
-      (when details
-        [:div {:class "im-centered-wide"}
+     (when details
+       [:div {:class "im-centered-wide"}
         [:p "Detalji:"]
         [:pre (h details)]]))))
 
@@ -50,21 +50,35 @@
     [:div {:class "im-centered well"}
      [:h1 {:class "text-center text-info"} "Login"]
      [:hr]
-     [:form {:novalidate "" :role "form" :method "post" :action "/login"}
+     [:form {:name "loginForm"
+             :novalidate ""
+             :role "form"
+             :method "post"
+             :action "/login"}
       (anti-forgery-field)
-      [:div {:class "form-group"}
-       (label {:class "control-label"} "email" "Email")
-       (email-field {:class "form-control"
-                     :placeholder "Vaš mail (npr. rd090112d@student.etf.rs)"
-                     :ng-model "user.email"} "user.email")]
-      [:div {:class "form-group"}
-       (label {:class "control-label"} "password" "Lozinka")
-       (password-field {:class "form-control"
-                        :placeholder "Vaša lozinka"
-                        :ng-model "user.password"} "user.password")]
+      [:div {:class "form-group row"}
+       (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
+       [:div {:class "col-lg-10"}
+        (email-field {:class "form-control"
+                      :required ""
+                      :placeholder "Vaš mail (npr. rd090112d@student.etf.rs)"
+                      :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
+                      :name "userEmail"
+                      :ng-model "user.email"} "email")]]
+      [:div {:class "row alert alert-danger" :role "alert" :ng-show "loginForm.userEmail.$error.pattern"}
+       [:span {:class "glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
+       [:span {:class "sr-only"} "Error: "]
+       " Unesite ispravnu email adresu."]
+      [:div {:class "row form-group"}
+       (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
+       [:div {:class "col-lg-10"}
+        (password-field {:class "form-control"
+                         :required ""
+                         :placeholder "Vaša lozinka"
+                         :ng-model "user.password"} "password")]]
       [:hr]
       [:div {:class "row"}
        [:div {:class "col-lg-6"}
-        [:button {:class "btn btn-primary btn-block" :type "submit"} "Prijava"]]
+        [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(loginForm.$valid)"} "Prijava"]]
        [:div {:class "col-lg-4"}
-        (elem/link-to {:class "btn btn-default bto-block"} "/register" "Registracija")]]]]))
+        (elem/link-to {:class "btn btn-default btn-block"} "/register" "Registracija")]]]]))

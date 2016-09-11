@@ -3,7 +3,13 @@
 	max-width: 500px;
 }
 
+.im-centered-med {
+	margin: auto;
+	max-width: 600px;
+} 
+
 .im-centered-wide {
 	margin: auto;
 	max-width: 750px;
-}
+} 
+

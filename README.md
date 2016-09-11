@@ -24,7 +24,8 @@ FIXME: listing of options this app accepts.
 
 ...
 
-### Any Other Sections
+### Nice To Have
+* Remember Me functionality (via cookies)
 ### That You Think
 ### Might be Useful
 
