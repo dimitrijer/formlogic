@@ -19,7 +19,7 @@
    :Arguments
    :Argument])
 
-(defn simplify-tree-by
+(defn- -simplify-tree-by
   [key]
   "Simplifies hiccup format of instaparse parser tree for specified nonterm.
   This is done by removing superfluous levels of nesting from recursive
@@ -36,27 +36,7 @@
   [tree]
   (insta/transform
     ;; This makes a map of :NonTerminal -> simplify-tree-by-:NonTerminal.
-    (into {} (map #(assoc {} % (simplify-tree-by %)) nonterms)) tree))
-
-(defn transform-implications
-  [tree]
-  (insta/transform
-    {:Implication
-     (fn [& children]
-       (let [[lhs rhs] children]
-         [:Disjunction [:Negation "~" lhs] rhs]))} tree))
-
-(defn- -reconstruct-node [key children] (into [key] children))
-
-(defn- -transform-term-negation
-  [& children]
-  (let [[_ [nonterm lhs rhs]] children]
-    (case nonterm
-      :Conjunction [:Disjunction [:Negation "~" lhs] [:Negation "~" rhs]]
-      :Disjunction [:Conjunction [:Negation "~" lhs] [:Negation "~" rhs]]
-      :Negation rhs
-      ;; In default case, do nothing - reconstruct original node.
-      (-reconstruct-node :Negation children))))
+    (into {} (map #(assoc {} % (-simplify-tree-by %)) nonterms)) tree))
 
 (defn- -negate-quantifier
   [quantifier]
@@ -71,6 +51,26 @@
       ;; This will, in turn, negate the formula in next iteration.
       [:QuantifiedFormula (-negate-quantifier quantifier) formula])
     [:Negation "~" formula]))
+
+(defn transform-implications
+  [tree]
+  (insta/transform
+    {:Implication
+     (fn [& children]
+       (let [[lhs rhs] children]
+         [:Disjunction (-negate-formula lhs) rhs]))} tree))
+
+(defn- -reconstruct-node [key children] (into [key] children))
+
+(defn- -transform-term-negation
+  [& children]
+  (let [[_ [nonterm lhs rhs]] children]
+    (case nonterm
+      :Conjunction [:Disjunction (-negate-formula lhs) (-negate-formula rhs)]
+      :Disjunction [:Conjunction (-negate-formula lhs) (-negate-formula rhs)]
+      :Negation rhs
+      ;; In default case, do nothing - reconstruct original node.
+      (-reconstruct-node :Negation children))))
 
 (defn- -transform-quantifier-negation
   [& children]
@@ -96,10 +96,12 @@
       result
       (recur result))))
 
+(defn depth-tree-seq [tree] (tree-seq #(vector? (second %)) rest tree))
+
 (defn walk-tree
   [tree f]
-  "Walks the syntax tree depth-first, applying f to leaves of the tree."
-  (apply f (filter string? (tree-seq #(not (string? %)) rest tree))))
+  "Walks the syntax tree depth-first, applying f to nodes of the tree."
+  (apply f (depth-tree-seq tree)))
 
 (defn wff->cnf
   [formula]
@@ -108,3 +110,5 @@
       simplify-tree
       transform-implications
       transform-negations))
+
+(def example-expr "\\A x { Cigla(x) => ((\\E y {Na(x, y) && ~Piramida(y)}) && (~\\E y {Na(x,y) && Na(y,x) }) && (\\A y { ~(Cigla(y)) => ~Jednako(x,y)}))}")
