@@ -7,8 +7,9 @@
 
 (def nonterms ^{:doc "Vector of all non-terminals"}
   [:WellFormedFormula
-   :Quantifiers
+   :QuantifiedFormula
    :Quantifier
+   :QuantifierNegation
    :Disjunction
    :Conjunction
    :Implication
@@ -45,21 +46,52 @@
        (let [[lhs rhs] children]
          [:Disjunction [:Negation "~" lhs] rhs]))} tree))
 
+(defn- -reconstruct-node [key children] (into [key] children))
+
+(defn- -transform-term-negation
+  [& children]
+  (let [[_ [nonterm lhs rhs]] children]
+    (case nonterm
+      :Conjunction [:Disjunction [:Negation "~" lhs] [:Negation "~" rhs]]
+      :Disjunction [:Conjunction [:Negation "~" lhs] [:Negation "~" rhs]]
+      :Negation rhs
+      ;; In default case, do nothing - reconstruct original node.
+      (-reconstruct-node :Negation children))))
+
+(defn- -negate-quantifier
+  [quantifier]
+  (if (= (first quantifier) :QuantifierNegation)
+    (nth quantifier 2)
+    [:QuantifierNegation "~" quantifier]))
+
+(defn- -negate-formula
+  [formula]
+  (if (= (first formula) :QuantifiedFormula)
+    (let [[_ quantifier formula] formula]
+      ;; This will, in turn, negate the formula in next iteration.
+      [:QuantifiedFormula (-negate-quantifier quantifier) formula])
+    [:Negation "~" formula]))
+
+(defn- -transform-quantifier-negation
+  [& children]
+  (let [[quantifier formula] children]
+    (if (= (first quantifier) :QuantifierNegation)
+      (let [[_ [_ foreach-exists literal]] (rest quantifier)]
+        (-reconstruct-node :QuantifiedFormula
+                           [[:Quantifier
+                             (case foreach-exists
+                               [:FOREACH] [:EXISTS]
+                               [:EXISTS] [:FOREACH]) literal]
+                           (-negate-formula formula)]))
+      ;; Non-negated quantified formula, do nothing.
+      (-reconstruct-node :QuantifiedFormula children))))
+
 (defn transform-negations
   [tree]
-  (let [transform-collection
-        (fn [& children]
-          (let [[_ term] children
-                [nonterm lhs rhs] term]
-            (case nonterm
-              :Conjunction [:Disjunction [:Negation "~" lhs] [:Negation "~" rhs]]
-              :Disjunction [:Conjunction [:Negation "~" lhs] [:Negation "~" rhs]]
-              :Negation rhs
-              ;; Default case.
-              (into [:Negation] children))))
-        result (insta/transform {:Negation transform-collection} tree)]
+  (let [result (insta/transform {:Negation -transform-term-negation
+                                 :QuantifiedFormula -transform-quantifier-negation} tree)]
     ;; We need to keep doing this until all negations have been dropped down to
-    ;; literals.
+    ;; atomics.
     (if (= 0 (compare tree result))
       result
       (recur result))))

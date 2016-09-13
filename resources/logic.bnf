@@ -1,6 +1,10 @@
-WellFormedFormula = Quantifiers '{' WellFormedFormula '}' | Disjunction
-Quantifiers = Quantifiers Quantifier | Quantifier | epsilon
+WellFormedFormula = QuantifiedFormula | Disjunction
+QuantifiedFormula = SingleQuantifier QuantifiedFormula |
+		    SingleQuantifier <'{'> QuantifiedFormula <'}'> |
+		    SingleQuantifier <'{'> Disjunction <'}'>
+<SingleQuantifier> = Quantifier | QuantifierNegation
 Quantifier = FOREACH LITERAL | EXISTS LITERAL
+QuantifierNegation = '~' Quantifier
 Disjunction = Disjunction <'||'> Conjunction | Conjunction
 Conjunction = Conjunction <'&&'> Implication | Implication
 Implication = Implication <'=>'> Term | Term
@@ -12,5 +16,5 @@ Argument = LITERAL | Predicate
 
 LITERAL = #'[a-z]+'
 PRED = #'[A-Z][a-z]*'
-FOREACH = #'\\A'
-EXISTS = #'\\E'
+FOREACH = <#'\\A'>
+EXISTS = <#'\\E'>
