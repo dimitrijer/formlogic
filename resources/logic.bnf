@@ -4,11 +4,11 @@ QuantifiedFormula = SingleQuantifier QuantifiedFormula |
 		    SingleQuantifier <'{'> Disjunction <'}'>
 <SingleQuantifier> = Quantifier | QuantifierNegation
 Quantifier = FOREACH LITERAL | EXISTS LITERAL
-QuantifierNegation = '~' Quantifier
+QuantifierNegation = <'~'> Quantifier
 Disjunction = Disjunction <'||'> Conjunction | Conjunction
 Conjunction = Conjunction <'&&'> Implication | Implication
 Implication = Implication <'=>'> Term | Term
-Negation = '~' Term
+Negation = <'~'> Term
 Term = <'('> WellFormedFormula <')'> | Negation | Predicate | LITERAL
 Predicate = PRED <'('> Arguments <')'>
 <Arguments> = Arguments <','> Argument | Argument
