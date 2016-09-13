@@ -10,8 +10,8 @@ Conjunction = Conjunction <'&&'> Implication | Implication
 Implication = Implication <'=>'> Term | Term
 Negation = '~' Term
 Term = <'('> WellFormedFormula <')'> | Negation | Predicate | LITERAL
-Predicate = PRED '(' Arguments ')'
-Arguments = Arguments ',' Argument | Argument
+Predicate = PRED <'('> Arguments <')'>
+<Arguments> = Arguments <','> Argument | Argument
 Argument = LITERAL | Predicate
 
 LITERAL = #'[a-z]+'
