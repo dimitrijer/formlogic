@@ -202,6 +202,7 @@
                                                    zip/down
                                                    zip/right
                                                    zip/right
+                                                   ;; Now we are at formula contents.
                                                    zip/node)))]
               ;; We replace all references to the bound-literal with replacement.
               (recur (replace-literal bound-literal replacement modified-loc)))
@@ -222,19 +223,55 @@
       (recur used-literals (map str/join (comb/cartesian-product alphabet literals)))
       next-candidate))))
 
-(defn transform-unique-quantifiers
+(defn transform-universal-quantifiers
   ([tree] (transform-unique-quantifiers (zip/vector-zip tree) #{}))
   ([loc atoms]
    (if-let [formula (next-quantified-formula loc :FOREACH)]
-     (let [literal (-extract-bound-literal formula)]
+     (let [literal (-extract-bound-literal formula)
+           atoms-with-literal (conj atoms literal)]
        (if (contains? atoms literal)
          ;; This literal was used before. Replace it with unused literal.
          (let [modified-loc (replace-literal literal
                                              [:LITERAL (next-unused-literal atoms)]
                                              formula)]
-           (recur (-> modified-loc zip/down zip/right zip/right) (conj atoms literal)))
-         (recur (-> formula zip/down zip/right zip/right) (conj atoms literal))))
+           (recur (-> modified-loc zip/down zip/right zip/right) atoms-with-literal))
+         (recur (-> formula zip/down zip/right zip/right) atoms-with-literal)))
      (zip/root loc))))
+
+(defn extract-quantifiers
+  ([tree] (extract-quantifiers (zip/vector-zip tree) []))
+  ([loc root]
+   (if-let [formula (next-quantified-formula loc :FOREACH)]
+     (let [modified-formula (-> formula
+                                zip/down
+                                zip/right
+                                zip/right
+                                ;; Now we're at formula contents.
+                                zip/remove
+                                ;; Removing puts us at previous depth-first node.
+                                zip/up
+                                zip/up
+                                zip/up
+                                ;; Now we're at formula root. Leave a marker.
+                                (zip/append-child [:append-here])
+                                zip/node)
+           new-root (if (empty? root)
+                      (conj root modified-formula)
+                      (insta/transform {:append-here (constantly modified-formula)} root))
+           ;; Remove the existential formula and replace it with its
+           ;; contents.
+           modified-loc (zip/edit formula
+                                  (constantly (-> formula
+                                                  zip/down
+                                                  zip/right
+                                                  zip/right
+                                                  ;; Now we are at formula contents.
+                                                  zip/node)))]
+
+       (extract-quantifiers modified-loc new-root))
+     ;; Finally, replace the marker at the end of quantifier chain with modified
+     ;; tree node.
+     (insta/transform {:append-here (constantly (zip/root loc))} root))))
 
 (defn wff->cnf
   "Converts a well-formed formula in string form to conjuctive-normal-form in
@@ -245,4 +282,5 @@
       transform-implications
       transform-negations
       transform-existential-quantifiers
-      transform-unique-quantifiers))
+      transform-universal-quantifiers
+      extract-quantifiers))
