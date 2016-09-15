@@ -1,7 +1,9 @@
 (ns formlogic.parser
   (:require [instaparse.core :as insta]
             [clojure.tools.logging :as log]
-            [clojure.zip :as zip]))
+            [clojure.zip :as zip]
+            [clojure.string :as str]
+            [clojure.math.combinatorics :as comb]))
 
 (def logic-parser
   "Main parser for logic expressions."
@@ -24,7 +26,8 @@
    :Argument])
 
 (def nonterms-exclude-simplify
-  "These nonterms will not be simplified."
+  "These nonterms will not be simplified - their forms contain only one child,
+  so we would lose them during simplification."
   #{:Negation :QuantifierNegation})
 
 (defn- -reconstruct-node
@@ -206,6 +209,33 @@
             (zip/root loc)))]
     (replace-next-existential-formula loc)))
 
+(defn char-range [start end]
+  (map (comp str char) (range (int start) (inc (int end)))))
+
+(def literals (char-range \a \c))
+
+(defn next-unused-literal
+  ([used-literals] (next-unused-literal used-literals literals))
+  ([used-literals alphabet]
+  (let [next-candidate (first (filter #(not (contains? used-literals %)) alphabet))]
+    (if (nil? next-candidate)
+      (recur used-literals (map str/join (comb/cartesian-product alphabet literals)))
+      next-candidate))))
+
+(defn transform-unique-quantifiers
+  ([tree] (transform-unique-quantifiers (zip/vector-zip tree) #{}))
+  ([loc atoms]
+   (if-let [formula (next-quantified-formula loc :FOREACH)]
+     (let [literal (-extract-bound-literal formula)]
+       (if (contains? atoms literal)
+         ;; This literal was used before. Replace it with unused literal.
+         (let [modified-loc (replace-literal literal
+                                             [:LITERAL (next-unused-literal atoms)]
+                                             formula)]
+           (recur (-> modified-loc zip/down zip/right zip/right) (conj atoms literal)))
+         (recur (-> formula zip/down zip/right zip/right) (conj atoms literal))))
+     (zip/root loc))))
+
 (defn wff->cnf
   "Converts a well-formed formula in string form to conjuctive-normal-form in
   tree form."
@@ -214,4 +244,5 @@
       simplify-tree
       transform-implications
       transform-negations
-      transform-existential-quantifiers))
+      transform-existential-quantifiers
+      transform-unique-quantifiers))
