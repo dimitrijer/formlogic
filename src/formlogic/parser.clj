@@ -1,11 +1,15 @@
 (ns formlogic.parser
   (:require [instaparse.core :as insta]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [clojure.zip :as zip]))
 
-(def logic-parser (insta/parser (clojure.java.io/resource "logic.bnf")
-                                :auto-whitespace :standard))
+(def logic-parser
+  "Main parser for logic expressions."
+  (insta/parser (clojure.java.io/resource "logic.bnf")
+                :auto-whitespace :standard))
 
-(def nonterms ^{:doc "Vector of all non-terminals"}
+(def nonterms
+  "Vector of all non-terminals."
   [:WellFormedFormula
    :QuantifiedFormula
    :Quantifier
@@ -19,23 +23,41 @@
    :Arguments
    :Argument])
 
-(def nonterms-exclude-simplify #{:Negation :QuantifierNegation})
+(def nonterms-exclude-simplify
+  "These nonterms will not be simplified."
+  #{:Negation :QuantifierNegation})
+
+(defn- -reconstruct-node
+  "Reconstructs node from nonterm key and children."
+  [key children]
+  (into [key] children))
 
 (defn- -simplify-tree-by
-  [key]
   "Simplifies hiccup format of instaparse parser tree for specified nonterm.
   This is done by removing superfluous levels of nesting from recursive
   elements. For example, [:Disjunction [:Conjunction [:Implication [:Term]]]]
   becomes just [:Term]."
+  [key]
   (fn [& children]
     (if (and (not (contains? nonterms-exclude-simplify key))
              (= (count children) 1))
       ;; Return the only child.
       (first children)
       ;; Don't change anything here.
-      (into [key] children))))
+      (-reconstruct-node key children))))
+
+(defn nonterm?
+   "Tests if node is a nonterminal."
+  ([node]
+   (and (vector? node) (keyword? (first node))))
+  ([node & nonterm-contents]
+     (and (nonterm? node)
+          ;; Only compare first N children, where N is number of additional
+          ;; args specified.
+          (= nonterm-contents (take (count nonterm-contents) node)))))
 
 (defn simplify-tree
+  "Applies -simplify-tree-by for all nonterms (except excluded)."
   [tree]
   (insta/transform
     ;; This makes a map of :NonTerminal -> simplify-tree-by-:NonTerminal.
@@ -43,13 +65,13 @@
 
 (defn- -negate-quantifier
   [quantifier]
-  (if (= (first quantifier) :QuantifierNegation)
+  (if (nonterm? quantifier :QuantifierNegation)
     (second quantifier)
     [:QuantifierNegation quantifier]))
 
 (defn- -negate-formula
   [formula]
-  (if (= (first formula) :QuantifiedFormula)
+  (if (nonterm? formula :QuantifiedFormula)
     (let [[_ quantifier formula] formula]
       ;; This will, in turn, negate the formula in next iteration.
       [:QuantifiedFormula (-negate-quantifier quantifier) formula])
@@ -63,8 +85,6 @@
        (let [[lhs rhs] children]
          [:Disjunction (-negate-formula lhs) rhs]))} tree))
 
-(defn- -reconstruct-node [key children] (into [key] children))
-
 (defn- -transform-term-negation
   [& children]
   (let [[[nonterm lhs rhs]] children]
@@ -72,13 +92,16 @@
       :Conjunction [:Disjunction (-negate-formula lhs) (-negate-formula rhs)]
       :Disjunction [:Conjunction (-negate-formula lhs) (-negate-formula rhs)]
       :Negation lhs
+      ;; This is a custom rule, used for ~(\\A x) forms. Replace it with form
+      ;; that can be negated in next run with the other rule.
+      :QuantifiedFormula [:QuantifiedFormula (-negate-quantifier lhs) rhs]
       ;; In default case, do nothing - reconstruct original node.
       (-reconstruct-node :Negation children))))
 
 (defn- -transform-quantifier-negation
   [& children]
   (let [[quantifier formula] children]
-    (if (= (first quantifier) :QuantifierNegation)
+    (if (nonterm? quantifier :QuantifierNegation)
       (let [[[_ foreach-exists literal]] (rest quantifier)]
         (-reconstruct-node :QuantifiedFormula
                            [[:Quantifier
@@ -99,29 +122,96 @@
       result
       (recur result))))
 
-(defn depth-tree-seq [tree] (tree-seq #(vector? (second %)) rest tree))
+(def example-expr "\\A x { Cigla(x) => ((\\E y {Na(x, y) && ~Piramida(y)}) && (~\\E y {Na(x,y) && Na(y,x) }) && (\\A y { ~Cigla(y) => ~Jednako(x,y)}))}")
 
-(defn walk-tree
-  ([tree f]
-   (walk-tree [] tree (constantly true) f))
-  ([path tree filter-by f]
-   "Walks the syntax tree depth-first, filtering nodes with filter-by, and then
-   applying f to matched nodes (f takes path and node)."
-   (let [tree-seq (depth-tree-seq tree)
-         [subpath matched] (split-with (complement filter-by) tree-seq)
-         path (concat path subpath)]
-     (f path (first matched))
-     (if (empty? (rest matched))
-       nil
-       (recur path (rest matched) filter-by f)))))
+(defn quantified-formula? [loc] (nonterm? (zip/node loc) :QuantifiedFormula))
+
+(defn- -extract-bound-literal [loc]
+  (if (quantified-formula? loc)
+    (-> loc zip/down zip/right zip/down zip/right zip/right zip/down zip/right zip/node)
+   nil))
+
+(defn- -extract-quantifier [loc]
+  (if (quantified-formula? loc)
+    (-> loc zip/down zip/right zip/down zip/right zip/down zip/node)
+   nil))
+
+(defn next-quantified-formula [loc quantifier]
+  (if (zip/end? loc)
+    nil
+    (if (= quantifier (zip/node loc))
+      (-> loc zip/up zip/up zip/up)
+      (recur (zip/next loc) quantifier))))
+
+(defn collect-quantifier-bound-atoms
+  ([loc] (collect-quantifier-bound-atoms (zip/up loc) []))
+  ([loc bound-atoms]
+   (if (nil? loc)
+     ;; Reached the root.
+     bound-atoms
+    (recur (zip/up loc)
+      (if (and (quantified-formula? loc) (= :FOREACH (-extract-quantifier loc)))
+        (conj bound-atoms (-extract-bound-literal loc))
+        bound-atoms)))))
+
+(defn replace-literal
+  [literal replacement loc]
+  (letfn [(recursive? [loc]
+            (if (zip/end? loc)
+              false
+              (if (nonterm? (zip/node loc) :LITERAL literal)
+                true
+                (recur (zip/next loc)))))
+          (alter-subtree [loc]
+            (if (zip/end? loc)
+              ;; Grab the whole modified subtree.
+              (zip/root loc)
+              (if (nonterm? (zip/node loc) :LITERAL literal)
+                ;; Replace literal.
+                (recur (zip/next (zip/edit loc (constantly replacement))))
+                ;; No literal here, move on.
+                (recur (zip/next loc)))))]
+    ;; Check for infinite recursion.
+    (if (recursive? (zip/vector-zip replacement))
+      (throw (IllegalArgumentException.
+               (str "Replacement " replacement " contains literal to replace " literal " !")))
+      (zip/edit loc #(alter-subtree (zip/vector-zip %))))))
+
+(def replacement-predicate-index (atom 0))
+(defn next-replacement-predicate! []
+  (str "F" (swap! replacement-predicate-index + 1)))
+
+(defn transform-existential-quantifiers
+  [tree]
+  (let [loc (zip/vector-zip tree)
+        replace-next-existential-formula
+        (fn [loc]
+          (if-let [existential-formula (next-quantified-formula loc :EXISTS)]
+            (let [bound-literal (-extract-bound-literal existential-formula)
+                  bound-atoms (collect-quantifier-bound-atoms existential-formula)
+                  replacement (reduce #(conj %1 (vector :LITERAL %2))
+                                      [:Predicate [:PRED (next-replacement-predicate!)]]
+                                      bound-atoms)
+                  ;; Remove the existential formula and replace it with its
+                  ;; contents.
+                  modified-loc (zip/edit existential-formula
+                                         (constantly (-> existential-formula
+                                                   zip/down
+                                                   zip/right
+                                                   zip/right
+                                                   zip/node)))]
+              ;; We replace all references to the bound-literal with replacement.
+              (recur (replace-literal bound-literal replacement modified-loc)))
+            ;; Nothing more to do.
+            (zip/root loc)))]
+    (replace-next-existential-formula loc)))
 
 (defn wff->cnf
-  [formula]
   "Converts a well-formed formula in string form to conjuctive-normal-form in
   tree form."
+  [formula]
   (-> (logic-parser formula)
       simplify-tree
       transform-implications
-      transform-negations))
-
-(def example-expr "\\A x { Cigla(x) => ((\\E y {Na(x, y) && ~Piramida(y)}) && (~\\E y {Na(x,y) && Na(y,x) }) && (\\A y { ~Cigla(y) => ~Jednako(x,y)}))}")
+      transform-negations
+      transform-existential-quantifiers))
