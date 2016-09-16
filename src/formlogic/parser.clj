@@ -238,20 +238,39 @@
          (recur (-> formula zip/down zip/right zip/right) atoms-with-literal)))
      (zip/root loc))))
 
-(defn extract-quantifiers
-  ([tree] (extract-quantifiers (zip/vector-zip tree) [:append-here]))
+(defn- strip-quantified-formula
+  ([quantified-formula-loc]
+   (if (quantified-formula? quantified-formula-loc)
+     (-> quantified-formula-loc
+         zip/down
+         zip/right
+         zip/right
+         ;; Now we're at formula contents.
+         zip/remove
+         ;; Removing puts us at previous depth-first node.
+         zip/up
+         zip/up
+         zip/up)
+     ;; Do nothing.
+     quantified-formula-loc))
+  ([quantified-formula-loc replacement]
+   (if (quantified-formula? quantified-formula-loc)
+     (-> quantified-formula-loc
+         zip/down
+         zip/right
+         zip/right
+         ;; Now we're at formula contents.
+         (zip/edit (constantly replacement))
+         zip/up)
+     ;; Do nothing.
+     quantified-formula-loc)))
+
+(defn pull-quantifiers-up
+  ([tree] (pull-quantifiers-up (zip/vector-zip tree) [:append-here]))
   ([loc root]
    (if-let [formula (next-quantified-formula loc :FOREACH)]
      (let [modified-formula (-> formula
-                                zip/down
-                                zip/right
-                                zip/right
-                                ;; Now we're at formula contents.
-                                zip/remove
-                                ;; Removing puts us at previous depth-first node.
-                                zip/up
-                                zip/up
-                                zip/up
+                                strip-quantified-formula
                                 ;; Now we're at formula root. Leave a marker.
                                 (zip/append-child [:append-here])
                                 zip/node)
@@ -300,6 +319,94 @@
       result
       (recur result))))
 
+(defn skip-quantifiers
+  "Skips quantifiers at beginning of loc, returning loc at first non-quantified
+  formula."
+  [loc]
+  (if (quantified-formula? loc)
+    (recur (-> loc zip/down zip/right zip/right))
+    ;; We're done.
+    loc))
+
+(defn extract-quantifiers
+  "Extracts quantifiers at beginning of loc, returning loc at start of quantifier
+  formula. Also replaces contents with replacement."
+  [loc replacement]
+  (if-let [previous-loc (zip/up (skip-quantifiers loc))]
+    (zip/root (strip-quantified-formula previous-loc replacement))
+    []))
+
+(defn filter-quantifiers
+  "Returns quantifiers tree without quantifiers that do not bind any literals
+  in formula."
+  [loc formula]
+  (letfn [(extract-literals [loc literals-in-loc]
+            (if (zip/end? loc)
+              literals-in-loc
+              (if (nonterm? (zip/node loc) :LITERAL)
+                (recur (zip/next loc) (conj literals-in-loc (-> loc
+                                                                zip/down
+                                                                zip/right
+                                                                zip/node)))
+                (recur (zip/next loc) literals-in-loc))))
+          (remove-quantifiers [loc literals-in-formula]
+            (if-let [next-quantifier (next-quantified-formula loc :FOREACH)]
+              (let [bound-literal (-extract-bound-literal next-quantifier)
+                    modified-loc (if (not (contains? literals-in-formula bound-literal))
+                                   ;; Redundant quantifier, replace quantified
+                                   ;; formula with contents.
+                                   (zip/edit next-quantifier
+                                             (constantly (-> next-quantifier
+                                                             zip/down
+                                                             zip/right
+                                                             zip/right
+                                                             ;; Now we are at formula contents.
+                                                             zip/node)))
+                                   (-> next-quantifier zip/down zip/right zip/right))]
+                (recur modified-loc literals-in-formula))
+              ;; There are no more quantifiers.
+              (zip/root loc)))]
+    ;; First extract literals used in formula, then remove all quantifiers that
+    ;; do not bind those literals from the loc
+    (remove-quantifiers loc (extract-literals (zip/vector-zip formula) #{}))))
+
+(defn collect-conjunction-terms
+  "Returns a vector of formulas which are operands to conjunctions, starting at
+  loc."
+  [loc]
+  (let [node (zip/node loc)]
+  (if (or (zip/end? loc) (nonterm? node :Conjunction))
+    (let [[_ lhs rhs] node
+          ;; Collect non-conjunction operands.
+          terms (reduce #(conj %1 %2)
+                        []
+                        (filter #(not (nonterm? % :Conjunction)) [lhs rhs]))]
+      ;; Descend into children.
+      (concat terms
+              (collect-conjunction-terms (-> loc zip/down zip/right))
+              (collect-conjunction-terms (-> loc zip/down zip/right zip/right))))
+    ;; Not a conjunction.
+    [])))
+
+(defn split-on-conjunctions
+  [tree]
+  (let [loc (zip/vector-zip tree)
+        quantifiers (extract-quantifiers loc [:append-here])
+        after-quantifiers (skip-quantifiers loc)
+        ;; If there are no terms, just return the top formula.
+        terms (first (filter (complement empty?)
+                             [(collect-conjunction-terms after-quantifiers)
+                              [(zip/node after-quantifiers)]]))]
+    (if (empty? quantifiers)
+      terms
+      ;; Filter out redundant quantifiers.
+      (map #(filter-quantifiers
+              ;; Create a new zipper by appending formula to quantifiers.
+              (zip/vector-zip (insta/transform
+                                {:append-here (constantly %)}
+                                quantifiers))
+              %) terms))))
+
 (defn wff->cnf
   "Converts a well-formed formula in string form to conjuctive-normal-form in
   tree form."
@@ -310,5 +417,8 @@
       transform-negations
       transform-existential-quantifiers
       transform-universal-quantifiers
-      extract-quantifiers
-      descend-disjunctions))
+      pull-quantifiers-up
+      descend-disjunctions
+      split-on-conjunctions
+      ;; From this point on we have a vector of formulas.
+      ))
