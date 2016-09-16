@@ -62,14 +62,14 @@
        [:div {:class "col-lg-10"}
         (email-field {:class "form-control"
                       :required ""
-                      :placeholder "Vaš mail (npr. rd090112d@student.etf.rs)"
+                      :placeholder "Vaš mail"
                       :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
                       :name "userEmail"
                       :ng-model "user.email"} "email")]]
       [:div {:class "row alert alert-danger" :role "alert" :ng-show "loginForm.userEmail.$error.pattern"}
        [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
        [:span {:class "col-lg-1 sr-only"} "Error: "]
-       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu."]]
+       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
       [:div {:class "row form-group"}
        (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
        [:div {:class "col-lg-10"}
@@ -84,4 +84,39 @@
        [:div {:class "col-lg-4"}
         (elem/link-to {:class "btn btn-default btn-block"} "/register" "Registracija")]]]]))
 
-(defn register-page [] (account/register-user))
+(defn register-page []
+  (page-template
+    "Registracija"
+    [:div {:class "im-centered well"}
+     [:h1 {:class "text-center text-info"} "Registracija"]
+     [:hr]
+     [:form {:name "registerForm"
+             :novalidate ""
+             :role "form"
+             :method "post"
+             :action "/register"}
+      (anti-forgery-field)
+      [:div {:class "form-group row"}
+       (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
+       [:div {:class "col-lg-10"}
+        (email-field {:class "form-control"
+                      :required ""
+                      :placeholder "Vaš mail"
+                      :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
+                      :name "email"
+                      :ng-model "user.email"} "email")]]
+      [:div {:class "row alert alert-danger" :role "alert" :ng-show "registerForm.email.$error.pattern"}
+       [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
+       [:span {:class "col-lg-1 sr-only"} "Error: "]
+       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+      [:hr]
+      [:div {:class "row"}
+       [:div {:class "col-lg-offset-3 col-lg-6"}
+        [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(registerForm.$valid)"} "Izvrši"]]]]]))
+
+(defn register-success [email]
+  (page-template "Registracija uspešna!"
+     [:div {:class "im-centered-wide well"}
+      [:h1 {:class "text-success"} "Registracija uspešna"]
+      [:p "Na Vašu email adresu " [:strong (h email)] " će kroz nekoliko minuta stići lozinka."]
+      (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]))

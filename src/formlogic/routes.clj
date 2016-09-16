@@ -4,13 +4,15 @@
             [ring.util.response :as resp]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [formlogic.handlers :as handlers]
-            [formlogic.views :as views]))
+            [formlogic.views :as views]
+            [formlogic.controllers :as controllers]))
 
 (defroutes unauthenticated-routes
   (GET "/" [] (resp/redirect "/login"))
   (GET "/login" [] (views/login-page))
+  (POST "/login" [email password] (controllers/login email password))
   (GET "/register" [] (views/register-page))
-  (POST "/login" [& params] (handlers/login params)))
+  (POST "/register" [email] (controllers/register email)))
 
 (defroutes user-routes
   (context "/user/:user-id" [user-id]

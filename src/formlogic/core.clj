@@ -1,13 +1,9 @@
 (ns formlogic.core
   (:require [clojure.tools.logging :as log]
-            [immuconf.config :as conf]
             [ring.adapter.jetty :refer [run-jetty]]
-            [formlogic.routes :refer [app]])
+            [formlogic.routes :refer [app]]
+            [formlogic.config :refer [cget]])
   (:gen-class))
-
-(def cfg (conf/load "resources/config.edn"))
-
-(def cget (partial conf/get cfg))
 
 ;; By using defonce we prevent multiple evaluation during REPL reload. It also
 ;; allows us to start and stop the server interactively. Passing app as var

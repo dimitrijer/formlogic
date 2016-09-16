@@ -7,6 +7,4 @@
               :user "formlogic"})
 
 (defqueries "sql/get.sql" {:connection db-spec})
-
-(find-user-by-id {:id 1})
-(find-user-by-email {:email "dimitrijer@gmail.com"})
+(defqueries "sql/insert.sql" {:connection db-spec})
