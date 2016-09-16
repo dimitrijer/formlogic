@@ -5,30 +5,32 @@
             [ring.util.http-response :as resp]
             [formlogic.views :as views]))
 
-(defn wrap-log-request [handler]
+(defn wrap-log-request
   "Middleware that logs each request."
+  [handler]
   (fn [req]
     (let [{:keys [uri remote-addr]} req
           current-time (System/currentTimeMillis)
           request-method (str/upper-case (:request-method req))]
-      (log/debugf "Started %s [%s] by (%s)" request-method uri remote-addr)
-      ; Let evaluates to last form, so, for sake of next middleware, we need to make sure
-      ; it evaluates to result of calling handler function.
-      (let [response-map (handler req)
-            status-code (:status response-map)
-            status-name (status/get-name status-code)
-            elapsed-time (- (System/currentTimeMillis) current-time)]
-        (log/debugf "Finished %s [%s => %d %s] in %dms by (%s)"
-                    request-method
-                    uri
-                    status-code
-                    status-name
-                    elapsed-time
-                    remote-addr)
-        response-map))))
+      ;; Let evaluates to last form, so, for sake of next middleware, we need to make sure
+      ;; it evaluates to result of calling handler function. Also, check if response
+      ;; map is nil, since this route may have not been matched.
+      (if-let [response-map (handler req)]
+        (let [status-code (:status response-map)
+              status-name (status/get-name status-code)
+              elapsed-time (- (System/currentTimeMillis) current-time)]
+          (log/debugf "Finished %s [%s => %d %s] in %dms by (%s)"
+                      request-method
+                      uri
+                      status-code
+                      status-name
+                      elapsed-time
+                      remote-addr)
+          response-map)))))
 
-(defn wrap-catch-exceptions [handler]
+(defn wrap-catch-exceptions
   "Middleware that catches all exceptions in business logic."
+  [handler]
   (fn [req]
     (try (handler req)
          (catch Exception e
@@ -39,8 +41,9 @@
              (resp/internal-server-error
                (str/join "\n" (conj (map str (.getStackTrace e)) (.toString e)))))))))
 
-(defn wrap-500 [handler]
+(defn wrap-500
   "Middleware that replaces all 500 responses with a custom page."
+  [handler]
   (fn [req]
     (let [response-map (handler req)
           status (:status response-map)]
@@ -49,7 +52,3 @@
             (resp/content-type "text/html")
             (resp/charset "utf-8"))
         response-map))))
-
-(defn login [params]
-  (let [{:keys [email password]} params]
-    (resp/internal-server-error "amigaaaawd")))

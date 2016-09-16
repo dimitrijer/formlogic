@@ -6,15 +6,26 @@
             [formlogic.handlers :as handlers]
             [formlogic.views :as views]))
 
-(defroutes app-routes
-  (GET "/" [] () (resp/redirect "/login"))
+(defroutes unauthenticated-routes
+  (GET "/" [] (resp/redirect "/login"))
   (GET "/login" [] (views/login-page))
   (GET "/register" [] (views/register-page))
-  (POST "/login" [& params] (handlers/login params))
+  (POST "/login" [& params] (handlers/login params)))
+
+(defroutes user-routes
+  (context "/user/:user-id" [user-id]
+    (GET "/" []  (str "<p>Olala " user-id "</p>"))))
+
+(defroutes default-routes
   (route/not-found views/not-found-page))
 
-(def app
-  (-> (wrap-defaults #'app-routes site-defaults)
+(defn wrap-basic-middleware [some-routes]
+  (-> (wrap-defaults some-routes site-defaults)
       handlers/wrap-catch-exceptions
       handlers/wrap-log-request
       handlers/wrap-500))
+
+(def app (routes
+           (wrap-basic-middleware #'unauthenticated-routes)
+           (wrap-basic-middleware #'user-routes)
+           (wrap-basic-middleware #'default-routes)))
