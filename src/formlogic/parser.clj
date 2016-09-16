@@ -30,7 +30,7 @@
   so we would lose them during simplification."
   #{:Negation :QuantifierNegation})
 
-(defn- -reconstruct-node
+(defn- -construct-node
   "Reconstructs node from nonterm key and children."
   [key children]
   (into [key] children))
@@ -47,7 +47,7 @@
       ;; Return the only child.
       (first children)
       ;; Don't change anything here.
-      (-reconstruct-node key children))))
+      (-construct-node key children))))
 
 (defn nonterm?
    "Tests if node is a nonterminal."
@@ -99,21 +99,21 @@
       ;; that can be negated in next run with the other rule.
       :QuantifiedFormula [:QuantifiedFormula (-negate-quantifier lhs) rhs]
       ;; In default case, do nothing - reconstruct original node.
-      (-reconstruct-node :Negation children))))
+      (-construct-node :Negation children))))
 
 (defn- -transform-quantifier-negation
   [& children]
   (let [[quantifier formula] children]
     (if (nonterm? quantifier :QuantifierNegation)
       (let [[[_ foreach-exists literal]] (rest quantifier)]
-        (-reconstruct-node :QuantifiedFormula
+        (-construct-node :QuantifiedFormula
                            [[:Quantifier
                              (case foreach-exists
                                [:FOREACH] [:EXISTS]
                                [:EXISTS] [:FOREACH]) literal]
                            (-negate-formula formula)]))
       ;; Non-negated quantified formula, do nothing.
-      (-reconstruct-node :QuantifiedFormula children))))
+      (-construct-node :QuantifiedFormula children))))
 
 (defn transform-negations
   [tree]
@@ -224,7 +224,7 @@
       next-candidate))))
 
 (defn transform-universal-quantifiers
-  ([tree] (transform-unique-quantifiers (zip/vector-zip tree) #{}))
+  ([tree] (transform-universal-quantifiers (zip/vector-zip tree) #{}))
   ([loc atoms]
    (if-let [formula (next-quantified-formula loc :FOREACH)]
      (let [literal (-extract-bound-literal formula)
@@ -270,8 +270,39 @@
 
        (extract-quantifiers modified-loc new-root))
      ;; Finally, replace the marker at the end of quantifier chain with modified
-     ;; tree node.
-     (insta/transform {:append-here (constantly (zip/root loc))} root))))
+     ;; tree node, if there are quantifiers at all.
+     (if (empty? root)
+       (zip/root loc)
+       (insta/transform {:append-here (constantly (zip/root loc))} root)))))
+
+(defn- -transform-disjunctions [& children]
+  (let [[[lhs-nonterm & lhs-children] [rhs-nonterm & rhs-children]] children
+        lhs (first children)
+        rhs (second children)]
+    (if (= :Conjunction lhs-nonterm)
+      ;; Perform left-based descend.
+      (let [[conj-lhs-term conj-rhs-term] lhs-children
+            left-term (-construct-node :Disjunction [conj-lhs-term rhs])
+            right-term (-construct-node :Disjunction [conj-rhs-term rhs])]
+        (-construct-node :Conjunction [left-term right-term]))
+      (if (= :Conjunction rhs-nonterm)
+        ;; Perform right-based descend.
+        (let [[conj-lhs-term conj-rhs-term] rhs-children
+              left-term (-construct-node :Disjunction [lhs conj-lhs-term])
+              right-term (-construct-node :Disjunction [lhs conj-rhs-term])]
+          (-construct-node :Conjunction [left-term right-term]))
+        ;; Nothing to do here.
+        (-construct-node :Disjunction children)
+        ))))
+
+(defn descend-disjunctions
+  [tree]
+  (let [result (insta/transform {:Disjunction -transform-disjunctions} tree)]
+    ;; We need to keep doing this until all disjunctions have been dropped down to
+    ;; atomics.
+    (if (= 0 (compare tree result))
+      result
+      (recur result))))
 
 (defn wff->cnf
   "Converts a well-formed formula in string form to conjuctive-normal-form in
@@ -283,4 +314,5 @@
       transform-negations
       transform-existential-quantifiers
       transform-universal-quantifiers
-      extract-quantifiers))
+      extract-quantifiers
+      descend-disjunctions))

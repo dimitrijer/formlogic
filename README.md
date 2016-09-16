@@ -9,8 +9,8 @@ Logic grammar building blocks are *atoms*, *predicates*, *operators* and
 *quantifiers*.
 
 **Atoms** are represented as sequences of lowercase alphabet letters, for example
-`abc` or `x`. **Predicates** are represented as sequences of letters that
-begin with a capital letter, e.g. `Predicate` or `TOP`.
+`abc` or `x`. **Predicates** are represented as sequences of lowercase letters that
+begin with a capital letter, e.g. `Predicate`.
 
 Logic grammar has support for the following logic **operators**, listed here by
 implicit order of precedence, from most immediate to least:
