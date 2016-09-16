@@ -28,4 +28,4 @@ createuser -U postgres -d -l formlogic
 
 # Prepare DB.
 cd /formlogic
-sh ./bin/demo_data.sql
+DBADMIN=postgres sh -c "./bin/demo_data.sh"
