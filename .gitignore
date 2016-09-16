@@ -12,3 +12,7 @@ pom.xml.asc
 .hg/
 # Log files.
 log
+# Vagrant stuff.
+.vagrant
+# OS X stuff.
+.DS_Store
