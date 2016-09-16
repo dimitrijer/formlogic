@@ -239,7 +239,7 @@
      (zip/root loc))))
 
 (defn extract-quantifiers
-  ([tree] (extract-quantifiers (zip/vector-zip tree) []))
+  ([tree] (extract-quantifiers (zip/vector-zip tree) [:append-here]))
   ([loc root]
    (if-let [formula (next-quantified-formula loc :FOREACH)]
      (let [modified-formula (-> formula
@@ -255,9 +255,7 @@
                                 ;; Now we're at formula root. Leave a marker.
                                 (zip/append-child [:append-here])
                                 zip/node)
-           new-root (if (empty? root)
-                      (conj root modified-formula)
-                      (insta/transform {:append-here (constantly modified-formula)} root))
+           new-root (insta/transform {:append-here (constantly modified-formula)} root)
            ;; Remove the existential formula and replace it with its
            ;; contents.
            modified-loc (zip/edit formula
@@ -267,8 +265,7 @@
                                                   zip/right
                                                   ;; Now we are at formula contents.
                                                   zip/node)))]
-
-       (extract-quantifiers modified-loc new-root))
+       (recur modified-loc new-root))
      ;; Finally, replace the marker at the end of quantifier chain with modified
      ;; tree node, if there are quantifiers at all.
      (if (empty? root)
@@ -292,8 +289,7 @@
               right-term (-construct-node :Disjunction [lhs conj-rhs-term])]
           (-construct-node :Conjunction [left-term right-term]))
         ;; Nothing to do here.
-        (-construct-node :Disjunction children)
-        ))))
+        (-construct-node :Disjunction children)))))
 
 (defn descend-disjunctions
   [tree]
