@@ -1,8 +1,9 @@
 (ns formlogic.views
   (:require [hiccup.element :as elem]
-            [formlogic.user.account :as account])
+            [formlogic.user.account :as account]
+            [clojure.string :as str])
   (:use [hiccup.page :only (html5 include-css include-js)]
-        [hiccup.core :only (h)]
+        [hiccup.core :only (h html)]
         [hiccup.form]
         [ring.util.anti-forgery]))
 
@@ -11,22 +12,51 @@
   [title & contents]
   (html5 {:lang "rs" :ng-app "myApp"}
          [:head
+          [:meta {:charset "utf-8"}]
+          [:meta {:http-equiv "X-UA-Compatible" :content "IE=edge"}]
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-          [:title title]
-          (include-css "css/style.css")
-          (include-css "css/bootstrap.min.css")
-          (include-js "js/angular.min.js")
-          (include-js "js/ui-bootstrap-tpls-2.1.3.min.js")
-          (include-js "js/script.js")]
-         [:body [:div {:class "container"} contents]]))
+          [:title (h title)]
+          (include-js "/js/angular.min.js"
+                      "/js/angular-cookies.min.js"
+                      "/js/angular-sanitize.min.js")
+          (include-js "/js/ui-bootstrap-tpls-2.1.3.min.js")
+          (include-js "/js/script.js")
+          (include-css "/css/style.css")
+          (include-css "/css/bootstrap.min.css")
+          [:body [:div {:class "container"} contents]]]))
+
+(defn button-link
+  ([uri btn-label] (button-link uri btn-label "btn btn-primary"))
+  ([uri btn-label btn-class]
+   (elem/link-to {:class btn-class} uri btn-label)))
+
+(defn well
+  [& contents]
+  [:div {:class "im-centered well"} contents])
+
+(defn wide-well
+  [& contents]
+  [:div {:class "im-centered-wide well"} contents])
+
+(defn ng-danger-alert
+  [ng-show ng-bind-html]
+  [:div {:ng-show ng-show :class "row alert alert-danger" :role "alert"}
+   [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
+   [:span {:ng-bind-html ng-bind-html :class "col-lg-11"}]])
+
+(defn danger-alert
+  [args contents]
+  [:div (into {:class "row alert alert-danger" :role "alert"} args)
+   [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
+   (into [:span {:class "col-lg-11"}] contents)])
 
 (def not-found-page
   (page-template
     "404 - Stranica ne postoji"
-    [:div {:class "im-centered well"}
-     [:h1 {:class "text-warning"} "Stranica nije nađena!"]
-     [:p "Tražena stranica ne postoji."]
-     (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]))
+    (well
+      [:h1 {:class "text-warning"} "Stranica nije nađena!"]
+      [:p "Tražena stranica ne postoji."]
+      (button-link "/" "Početna stranica"))))
 
 (defn internal-error-page 
   ([]
@@ -34,10 +64,10 @@
   ([details]
    (page-template
      "500 - Interna greška"
-     [:div {:class "im-centered-wide well"}
-      [:h1 {:class "text-danger"} "Interna greška!"]
-      [:p "Nešto nije u redu, radimo na tome..."]
-      (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]
+     (wide-well
+       [:h1 {:class "text-danger"} "Interna greška!"]
+       [:p "Nešto nije u redu, radimo na tome..."]
+       (button-link "/" "Početna stranica"))
      (when details
        [:div {:class "im-centered-wide"}
         [:p "Detalji:"]
@@ -45,78 +75,83 @@
 
 ;; Should be a function, since *anti-forgery-token* is bound to a session, and
 ;; this is defined as soon as source is eval'd.
-(defn login-page []
+(defn login-page
+  [& {:keys [alert]}]
   (page-template
     "Login"
-    [:div {:class "im-centered well"}
-     [:h1 {:class "text-center text-info"} "Login"]
-     [:hr]
-     [:form {:name "loginForm"
-             :novalidate ""
-             :role "form"
-             :method "post"
-             :action "/login"}
-      (anti-forgery-field)
-      [:div {:class "form-group row"}
-       (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
-       [:div {:class "col-lg-10"}
-        (email-field {:class "form-control"
-                      :required ""
-                      :placeholder "Vaš mail"
-                      :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
-                      :name "userEmail"
-                      :ng-model "user.email"} "email")]]
-      [:div {:class "row alert alert-danger" :role "alert" :ng-show "loginForm.userEmail.$error.pattern"}
-       [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
-       [:span {:class "col-lg-1 sr-only"} "Error: "]
-       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
-      [:div {:class "row form-group"}
-       (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
-       [:div {:class "col-lg-10"}
-        (password-field {:class "form-control"
-                         :required ""
-                         :placeholder "Vaša lozinka"
-                         :ng-model "user.password"} "password")]]
+    (well
+      (include-js "/js/md5.min.js" "/js/login.js")
+      [:h1 {:class "text-center text-info"} "Login"]
       [:hr]
-      [:div {:class "row"}
-       [:div {:class "col-lg-6"}
-        [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(loginForm.$valid)"} "Prijava"]]
-       [:div {:class "col-lg-4"}
-        (elem/link-to {:class "btn btn-default btn-block"} "/register" "Registracija")]]]]))
+      [:form {:name "loginForm"
+              :novalidate ""
+              :role "form"
+              :ng-controller "LoginFormController"
+              :ng-submit "login()"}
+       (anti-forgery-field)
+       (ng-danger-alert "alert != null" "alert")
+       [:div {:class "form-group row"}
+        (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
+        [:div {:class "col-lg-10"}
+         (email-field {:class "form-control"
+                       :required ""
+                       :placeholder "Vaš mail"
+                       :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
+                       :ng-model "user.email"} "email")]]
+       [:div {:class "row alert alert-warning" :role "alert" :ng-show "loginForm.email.$error.pattern"}
+        [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
+        [:span {:class "col-lg-1 sr-only"} "Error: "]
+        [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+       [:div {:class "row form-group"}
+        (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
+        [:div {:class "col-lg-10"}
+         (password-field {:class "form-control"
+                          :required ""
+                          :placeholder "Vaša lozinka"
+                          :ng-model "user.password"} "password")]]
+       [:hr]
+       [:div {:class "row"}
+        [:div {:class "col-lg-6"}
+         [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(loginForm.$valid)"} "Prijava"]]
+        [:div {:class "col-lg-4"}
+         (button-link "/register" "Registracija" "btn btn-default btn-block")]]])))
 
-(defn register-page []
+(defn register-page
+  [& {:keys [alert]}]
   (page-template
     "Registracija"
-    [:div {:class "im-centered well"}
-     [:h1 {:class "text-center text-info"} "Registracija"]
-     [:hr]
-     [:form {:name "registerForm"
-             :novalidate ""
-             :role "form"
-             :method "post"
-             :action "/register"}
-      (anti-forgery-field)
-      [:div {:class "form-group row"}
-       (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
-       [:div {:class "col-lg-10"}
-        (email-field {:class "form-control"
-                      :required ""
-                      :placeholder "Vaš mail"
-                      :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
-                      :name "email"
-                      :ng-model "user.email"} "email")]]
-      [:div {:class "row alert alert-danger" :role "alert" :ng-show "registerForm.email.$error.pattern"}
-       [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
-       [:span {:class "col-lg-1 sr-only"} "Error: "]
-       [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+    (well
+      [:h1 {:class "text-center text-info"} "Registracija"]
       [:hr]
-      [:div {:class "row"}
-       [:div {:class "col-lg-offset-3 col-lg-6"}
-        [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(registerForm.$valid)"} "Izvrši"]]]]]))
+      [:form {:name "registerForm"
+              :novalidate ""
+              :role "form"
+              :method "post"
+              :action "/register"}
+       (anti-forgery-field)
+       (when alert (danger-alert {} alert))
+       [:div {:class "form-group row"}
+        (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
+        [:div {:class "col-lg-10"}
+         (email-field {:class "form-control"
+                       :required ""
+                       :placeholder "Vaš mail"
+                       :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
+                       :name "email"
+                       :ng-model "user.email"} "email")]]
+       [:div {:class "row alert alert-warning" :role "alert" :ng-show "registerForm.email.$error.pattern"}
+        [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
+        [:span {:class "col-lg-1 sr-only"} "Error: "]
+        [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+       [:hr]
+       [:div {:class "row"}
+        [:div {:class "col-lg-offset-3 col-lg-6"}
+         [:button {:class "btn btn-primary btn-block" :type "submit" :ng-disabled "!(registerForm.$valid)"} "Izvrši"]]]])))
 
 (defn register-success [email]
-  (page-template "Registracija uspešna!"
-     [:div {:class "im-centered-wide well"}
+  (page-template
+    "Registracija uspešna!"
+    (wide-well
       [:h1 {:class "text-success"} "Registracija uspešna"]
       [:p "Na Vašu email adresu " [:strong (h email)] " će kroz nekoliko minuta stići lozinka."]
-      (elem/link-to {:class "btn btn-primary"} "/" "Početna stranica")]))
+      (button-link "/" "Početna stranica" "btn btn-primary"))))

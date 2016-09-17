@@ -20,6 +20,7 @@
                  [metosin/ring-http-response "0.8.0"]
                  ;; ring-defaults simplifies adding middleware for sane defaults.
                  [ring/ring-defaults "0.2.1"]
+                 [ring/ring-json "0.4.0"]
                  ;; Templating library.
                  [hiccup "1.0.5"]
                  ;; Mailing library.

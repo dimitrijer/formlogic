@@ -56,6 +56,7 @@ manually:
 
 ### Nice To Have
 * Remember Me functionality (via cookies)
+* Log each request start and end, and keep started time in session.
 ### That You Think
 ### Might be Useful
 

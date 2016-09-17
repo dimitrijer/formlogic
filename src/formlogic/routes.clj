@@ -3,6 +3,8 @@
             [compojure.route :as route]
             [ring.util.response :as resp]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [ring.middleware.content-type :refer [wrap-content-type]]
+            [ring.middleware.json :refer [wrap-json-response, wrap-json-params]]
             [formlogic.handlers :as handlers]
             [formlogic.views :as views]
             [formlogic.controllers :as controllers]))
@@ -22,11 +24,16 @@
   (route/not-found views/not-found-page))
 
 (defn wrap-basic-middleware [some-routes]
-  (-> (wrap-defaults some-routes site-defaults)
+  (-> some-routes
+      wrap-json-response
+      wrap-json-params
+      (wrap-defaults site-defaults)
       handlers/wrap-catch-exceptions
       handlers/wrap-log-request
       handlers/wrap-500))
 
+;; Note that every time we reload this page, a new in-memory session store is
+;; created, thus invalidating all previous session IDs.
 (def app (routes
            (wrap-basic-middleware #'unauthenticated-routes)
            (wrap-basic-middleware #'user-routes)

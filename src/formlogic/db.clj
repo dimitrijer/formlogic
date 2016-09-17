@@ -12,3 +12,5 @@
 
 (defqueries "sql/get.sql" {:connection db-spec})
 (defqueries "sql/insert.sql" {:connection db-spec})
+
+(defn unique-result [query params] (query params {:result-set-fn first}))
