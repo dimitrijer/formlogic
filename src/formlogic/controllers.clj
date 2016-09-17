@@ -15,18 +15,21 @@
   (let [pattern #"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"]
     (and (string? email) (re-matches pattern email))))
 
-(defn login [email password]
+(defn login [email password-md5]
   (if (validate-email email)
+    ;; Pull user from DB.
     (if-let [user (db/unique-result db/find-user-by-email {:email (str/lower-case email)})]
       (do
-        (log/debug "User" email "logged in.")
-        (resp/internal-server-error "amigaaaawd"))
+        ;; Check if password hashes match.
+        (if (= password-md5 (:password user))
+          (log/debug "User" email "logged in.")
+          (resp/forbidden {:alert (html "Pogrešna lozinka!")})))
       (do
         (log/debug "User" email "tried to login, but is not registered.")
         (resp/forbidden {:alert (html "Korisnik " [:strong email] " nije registrovan!")})))
-  (do
-    (log/error "User" email "tried to login, but does not match email pattern!")
-    (resp/forbidden {:alert "Navedeni email je pogrešnog formata!"}))))
+    (do
+      (log/error "User" email "tried to login, but does not match email pattern!")
+      (resp/forbidden {:alert "Navedeni email je pogrešnog formata!"}))))
 
 (def password-alphabet (concat (char-range \a \z)
                                (char-range \A \Z)
