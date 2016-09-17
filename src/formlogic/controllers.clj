@@ -45,7 +45,7 @@
           existing-user (db/unique-result db/find-user-by-email {:email (str/lower-case email)})]
       ;; TODO validate email
       (if existing-user
-        (views/register-page :alert ["Korisnik " [:strong email] " je već registrovan!"])
+        (views/register-page :alert (html "Korisnik " [:strong email] " je već registrovan!"))
         (do
           (db/insert-user! {:email (str/lower-case email) :password password})
           (log/debug "User" email "registered successfully.")

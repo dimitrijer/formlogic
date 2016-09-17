@@ -17,7 +17,6 @@
           [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
           [:title (h title)]
           (include-js "/js/angular.min.js"
-                      "/js/angular-cookies.min.js"
                       "/js/angular-sanitize.min.js")
           (include-js "/js/ui-bootstrap-tpls-2.1.3.min.js")
           (include-js "/js/script.js")
@@ -38,17 +37,11 @@
   [& contents]
   [:div {:class "im-centered-wide well"} contents])
 
-(defn ng-danger-alert
-  [ng-show ng-bind-html]
-  [:div {:ng-show ng-show :class "row alert alert-danger" :role "alert"}
+(defn ng-alert
+  [alert-class div-args span-args & contents]
+  [:div (into {:class (str "alert " alert-class) :role "alert"} div-args)
    [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
-   [:span {:ng-bind-html ng-bind-html :class "col-lg-11"}]])
-
-(defn danger-alert
-  [args contents]
-  [:div (into {:class "row alert alert-danger" :role "alert"} args)
-   [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
-   (into [:span {:class "col-lg-11"}] contents)])
+   [:span (into {:class "col-lg-11"} span-args) contents]])
 
 (def not-found-page
   (page-template
@@ -76,7 +69,7 @@
 ;; Should be a function, since *anti-forgery-token* is bound to a session, and
 ;; this is defined as soon as source is eval'd.
 (defn login-page
-  [& {:keys [alert]}]
+  []
   (page-template
     "Login"
     (well
@@ -89,7 +82,7 @@
               :ng-controller "LoginFormController"
               :ng-submit "login()"}
        (anti-forgery-field)
-       (ng-danger-alert "alert != null" "alert")
+       (ng-alert "row alert-danger" {:ng-show "alert != null"} {:ng-bind-html "alert"})
        [:div {:class "form-group row"}
         (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
         [:div {:class "col-lg-10"}
@@ -98,10 +91,10 @@
                        :placeholder "Vaš mail"
                        :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
                        :ng-model "user.email"} "email")]]
-       [:div {:class "row alert alert-warning" :role "alert" :ng-show "loginForm.email.$error.pattern"}
-        [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
-        [:span {:class "col-lg-1 sr-only"} "Error: "]
-        [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+       (ng-alert "row alert-warning"
+                 {:ng-show "loginForm.email.$error.pattern"}
+                 {}
+                 "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)")
        [:div {:class "row form-group"}
         (label {:class "col-lg-2 col-form-label control-label"} "password" "Lozinka")
         [:div {:class "col-lg-10"}
@@ -129,7 +122,7 @@
               :method "post"
               :action "/register"}
        (anti-forgery-field)
-       (when alert (danger-alert {} alert))
+       (when alert (ng-alert "row alert-danger" {} {} alert))
        [:div {:class "form-group row"}
         (label {:class "col-lg-2 col-form-label control-label"} "email" "Email")
         [:div {:class "col-lg-10"}
@@ -139,10 +132,10 @@
                        :ng-pattern "/.*@(.*\\.)?etf\\.rs$/"
                        :name "email"
                        :ng-model "user.email"} "email")]]
-       [:div {:class "row alert alert-warning" :role "alert" :ng-show "registerForm.email.$error.pattern"}
-        [:span {:class "col-lg-1 glyphicon glyphicon-exclamation-sign" :aria-hidden "true"}]
-        [:span {:class "col-lg-1 sr-only"} "Error: "]
-        [:span {:class "col-lg-11"} "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)"]]
+       (ng-alert "row alert-warning"
+                 {:ng-show "registerForm.email.$error.pattern"}
+                 {}
+                 "Unesite ispravnu email adresu (npr. rd090112d@student.etf.rs)")
        [:hr]
        [:div {:class "row"}
         [:div {:class "col-lg-offset-3 col-lg-6"}
