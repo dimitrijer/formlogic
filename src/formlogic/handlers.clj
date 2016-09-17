@@ -12,6 +12,10 @@
     (let [{:keys [uri remote-addr]} req
           current-time (System/currentTimeMillis)
           request-method (str/upper-case (:request-method req))]
+      (log/debugf "Started %s [%s] by (%s)"
+                  request-method
+                  uri
+                  remote-addr)
       ;; Let evaluates to last form, so, for sake of next middleware, we need to make sure
       ;; it evaluates to result of calling handler function. Also, check if response
       ;; map is nil, since this route may have not been matched.
@@ -52,3 +56,19 @@
             (resp/content-type "text/html")
             (resp/charset "utf-8"))
         response-map))))
+
+(defn wrap-user-session-check
+  "Middleware which asserts that user handler is being invoked for the right
+  user by inspecting session."
+  [handler]
+  (fn [{session :session :as req}]
+    (let [response-map (handler req)]
+      (if-let [user (:user session)]
+        response-map
+        (do
+          (log/error "Tried to invoke user handler without appropriate session!")
+          (-> (resp/forbidden views/forbidden-page)
+              (resp/content-type "text/html")
+              (resp/charset "utf-8")
+              ;; Clear session.
+              (assoc :session nil)))))))

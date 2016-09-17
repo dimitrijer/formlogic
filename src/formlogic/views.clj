@@ -51,6 +51,14 @@
       [:p "Tražena stranica ne postoji."]
       (button-link "/" "Početna stranica"))))
 
+(def forbidden-page
+  (page-template
+    "403 - Zabranjen pristup"
+    (well
+      [:h1 {:class "text-danger"} "Pristup onemogućen!"]
+      [:p "Pristup resursu je onemogućen usled nedovoljnih privilegija."]
+      (button-link "/" "Početna stranica"))))
+
 (defn internal-error-page 
   ([]
    (internal-error-page nil))

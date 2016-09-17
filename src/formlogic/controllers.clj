@@ -15,15 +15,19 @@
   (let [pattern #"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"]
     (and (string? email) (re-matches pattern email))))
 
-(defn login [email password-md5]
+(defn login [email password-md5 {session :session :as req}]
   (if (validate-email email)
     ;; Pull user from DB.
     (if-let [user (db/unique-result db/find-user-by-email {:email (str/lower-case email)})]
       (do
         ;; Check if password hashes match.
         (if (= password-md5 (:password user))
-          (log/debug "User" email "logged in.")
-          (resp/forbidden {:alert (html "Pogrešna lozinka!")})))
+          (let [session (assoc session :user user)]
+            (log/debug "User" email "logged in.")
+            (-> (resp/ok {:user-id (:id user)}) (assoc :session session)))
+          (do
+            (log/debug "User" email "tried to login with wrong password.")
+            (resp/forbidden {:alert (html "Pogrešna lozinka!")}))))
       (do
         (log/debug "User" email "tried to login, but is not registered.")
         (resp/forbidden {:alert (html "Korisnik " [:strong email] " nije registrovan!")})))
