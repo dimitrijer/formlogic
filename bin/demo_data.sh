@@ -4,7 +4,9 @@ DBADMIN=${DBADMIN:-dimitrijer}
 DBNAME=formlogic
 DBUSER=formlogic
 DIR=`dirname $0`
-DB_CREATE=${DIR}/../resources/sql/db_create.sql
+SCRIPTS_DIR=${DIR}/../resources/sql
+SCRIPTS=(db_create.sql
+	 assignments.sql)
 
 set -xeu
 
@@ -13,6 +15,8 @@ dropdb -U ${DBADMIN} --if-exists ${DBNAME}
 createdb -U ${DBADMIN} -O ${DBUSER} ${DBNAME} -E "UTF-8"
 
 echo "Executing demo data..."
-psql -v ON_ERROR_STOP=1 -U ${DBUSER} -d ${DBNAME} < ${DB_CREATE}
+for script in ${SCRIPTS[@]}; do
+	psql -v ON_ERROR_STOP=1 -U ${DBUSER} -d ${DBNAME} < ${SCRIPTS_DIR}/${script}
+done
 
 echo "Done!"
