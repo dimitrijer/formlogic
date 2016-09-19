@@ -50,7 +50,6 @@
     (let [password (generate-password password-length)
           send-to (if (cget :production) email "templaryum@gmail.com")
           existing-user (db/unique-result db/find-user-by-email {:email (str/lower-case email)})]
-      ;; TODO validate email
       (if existing-user
         (views/register-page :alert (html "Korisnik " [:strong email] " je već registrovan!"))
         (do

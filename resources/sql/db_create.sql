@@ -84,11 +84,13 @@ IMMUTABLE STRICT;
 CREATE TABLE static.question (
 	id SERIAL NOT NULL,
 	task_id int4 NOT NULL,
+	ord int4 NOT NULL,
 	type static.question_type NOT NULL,
 	body text NOT NULL,
-	choices text[],
+	choices text[] NOT NULL,
 	answers int2[] NOT NULL,
 	CHECK (check_question_answers_idx(answers, array_length(choices, 1))),
+	UNIQUE (task_id, ord),
 	PRIMARY KEY ("id")
 );
 
