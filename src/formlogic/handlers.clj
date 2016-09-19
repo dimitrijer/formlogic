@@ -37,7 +37,7 @@
   [handler]
   (fn [req]
     (try (handler req)
-         (catch Exception e
+         (catch Throwable e
            (do
              (log/error e "Unhandled exception in handler!")
              ;; We wrap exception and stack trace in response body. These will
