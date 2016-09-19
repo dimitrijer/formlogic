@@ -3,6 +3,7 @@
            [postal.core :as postal]
            [clojure.tools.logging :as log]
            [clojure.string :as str]
+           [clojure.java.jdbc :as jdbc]
            [formlogic.config :refer [cget]]
            [formlogic.parser :refer [char-range]]
            [formlogic.views :as views]
@@ -63,3 +64,43 @@
     (do
       (log/error "User" email "tried to register, but does not match email pattern!")
       (views/register-page :alert ["Navedeni email je pogrešnog formata!"]))))
+
+(defn attach-progress
+  [session user assignment-id]
+  (let [assignment-progress (db/get-or-create-progress user assignment-id)
+        session (assoc-in session [:progress assignment-id] assignment-progress)]
+    ;; Attach progress to progress map, within session. Always start from first task.
+    (-> (resp/found (str "/user/progress/" assignment-id "/" 1))
+        (assoc :session session))))
+
+(defn render-task
+  [session assignment-id task-ord]
+  (if-let [assignment-progress (get-in session [:progress assignment-id])]
+    ;; Fetch task, questions and previous questions for this page from DB.
+    (jdbc/with-db-transaction [tx db/db-spec]
+      (let [assignment-id (:assignment_id assignment-progress)
+            task (db/unique-result db/find-task-by-assignment-id
+                                   {:assignment_id assignment-id
+                                    :ord (Integer/parseInt task-ord)}
+                                   {:connection tx})
+            questions (db/find-questions-by-task-id {:task_id (:id task)}
+                                                    {:connection tx})
+            questions-progress (db/find-question-progress-by-assignment-id-for-task
+                                 {:assignment_progress_id (:id assignment-progress)
+                                  :task_id (:id task)}
+                                 {:connection tx})]
+        ;; Render task page with collected data, but first map question to its
+        ;; progress.
+        (views/task-page (:user session) task
+                         (into [] (map
+                                    (fn [question] {:question (db/unwrap-arrays question)
+                                                    :progress (first (filter
+                                                                       #(= (:question_id %)
+                                                                           (:id question))
+                                                                       questions-progress))})
+                                    questions)))))
+    (log/errorf (str "User %s tried to render task %s without attaching progress "
+                     "for assignment %s!")
+                (:email (:user session))
+                task-ord
+                assignment-id)))

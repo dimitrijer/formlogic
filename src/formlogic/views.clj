@@ -1,7 +1,9 @@
 (ns formlogic.views
   (:require [hiccup.element :as elem]
             [formlogic.user.account :as account]
-            [clojure.string :as str])
+            [clojure.tools.logging :as log]
+            [clojure.string :as str]
+            [formlogic.db :as db])
   (:use [hiccup.page :only (html5 include-css include-js)]
         [hiccup.core :only (h html)]
         [hiccup.form]
@@ -56,7 +58,8 @@
     "403 - Zabranjen pristup"
     (well
       [:h1 {:class "text-danger"} "Pristup onemogućen!"]
-      [:p "Pristup resursu je onemogućen usled nedovoljnih privilegija."]
+      [:p "Pristup resursu je onemogućen usled nedovoljnih privilegija. Molimo
+          ulogujte se ponovo."]
       (button-link "/" "Početna stranica"))))
 
 (defn internal-error-page 
@@ -208,27 +211,40 @@
 
 (defn user-page
   [user]
-  )
+  (page-template
+    "Zadaci"
+    (navbar (:email user))
+    [:h1 "Zadaci"]
+    [:div {:class "panel-group"}
+     (for [category (db/load-assignment-categories)
+           :let [category-name (:category category)
+                 cnt (:cnt category)]]
+       [:div {:class "panel panel-default"}
+        [:div {:class "panel-heading"}
+         [:h4 {:class "panel-title" } (h category-name) [:span {:class "pull-right badge"} cnt]]]
+        [:div {:class "list-group"}
+         (for [{assignment-id :id
+                assignment-name :name} (db/load-assignments-by-category {:category category-name})]
+           [:a {:href (str "/user/progress/" assignment-id) :class "list-group-item"}
+            assignment-name])]])]))
 
 (defn task-page
-  [session]
-  (let [user (:user session)]
-    (page-template
-      "Pitanja"
-      (navbar (:email user))
-      [:h1 {:class "text-center"} "Zadatak 1"]
-      [:h3 "Stranica 2"]
-      [:div {:class "row"}
-       (panel-column "panel-default" "Demonstracija")
-       (panel-column "panel-primary" "Pitanja"
-                     [:form {:name "taskForm"
-                             :novalidate ""
-                             :role "form"
-                             :method "post"
-                             :action "/user/answers"}
-                      (anti-forgery-field)
-                      (render-question {:ord 1 :type "fill" :body "Koje je boje nebo?" :id 1})
-                      (render-question {:ord 2 :type "multiple" :body "Koje od ponuđenih osoba se bave, ili su se bavile, glumom?" :id 2 :choices ["Frenk Sinatra" "Teodor Ruzvelt" "Džon Travolta" "Madona"]})
-                      (render-question {:ord 3 :type "single" :body "Koliko postoji kontinenata na zemaljskoj kugli?" :id 3 :choices ["dva" "nijedan" "pet" "osam"]})
-                     [:button {:class "btn btn-primary btn-block" :type "submit"} "Sledeće"]])
-       ])))
+  [user task questions-map]
+  (page-template
+    "Pitanja"
+    (navbar (:email user))
+    [:h1 {:class "text-center"} "Zadatak 1"]
+    [:h3 "Stranica 2"]
+    [:div {:class "row"}
+     (panel-column "panel-default" "Demonstracija")
+     (panel-column "panel-primary" "Pitanja"
+                   [:form {:name "taskForm"
+                           :novalidate ""
+                           :role "form"
+                           :method "post"
+                           :action "/user/answers"}
+                    (anti-forgery-field)
+                    (for [question questions-map]
+                      (render-question (:question question)))
+                    [:button {:class "btn btn-primary btn-block" :type "submit"} "Sledeće"]])
+     ]))

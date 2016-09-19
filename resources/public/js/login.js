@@ -18,7 +18,7 @@ myApp.controller('LoginFormController', ['$scope', '$http', '$window',
 				}
 			}).then(function successCallback(response) {
 				console.log(response);
-				$window.location.href = "/user/" + response["data"]["user-id"] + "/";
+				$window.location.href = "/user/";
 			}, function failedCallback(response, status) {
 				console.log(response);
 				$scope.alert = response["data"]["alert"];

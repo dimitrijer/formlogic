@@ -9,41 +9,29 @@ CREATE TABLE public.user (
 
 CREATE UNIQUE INDEX user_email_idx ON "user" ("email");
 
--- Score for user and assignment.
-CREATE TABLE public.user_score (
-	id SERIAL NOT NULL,
-	user_id int4 NOT NULL,
-	assignment_id int4 NOT NULL,
-	started_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-	completed_at timestamptz,
-	score int4 NOT NULL DEFAULT 0,
-	PRIMARY KEY("id")
-);
+-- ###############
+-- # Static data #
+-- ###############
 
-ALTER TABLE "user_score" ADD CONSTRAINT "Ref_user_score_to_user"
-	FOREIGN KEY ("user_id") REFERENCES "user"("id")
-	MATCH SIMPLE
-	ON DELETE CASCADE
-	ON UPDATE NO ACTION
-	NOT DEFERRABLE;
-
--- ###########
--- STATIC DATA
--- ###########
+-- Static data (assignments) is kept in static schema - this is data that cannot
+-- be modified by the app.
 CREATE SCHEMA static;
 
 -- Assignments are top-level entities.
 CREATE TABLE static.assignment (
 	id int4 NOT NULL,
 	name text NOT NULL,
+	category text NOT NULL,
 	PRIMARY KEY("id")
 );
 
 -- Tasks specific to assignments.
 CREATE TABLE static.task (
-	id int4 NOT NULL,
+	id SERIAL NOT NULL,
 	assignment_id int4 NOT NULL,
+	ord int4 NOT NULL,
 	contents text,
+	UNIQUE("assignment_id", "ord"),
 	PRIMARY KEY("id")
 );
 
@@ -90,12 +78,56 @@ CREATE TABLE static.question (
 	choices text[] NOT NULL,
 	answers int2[] NOT NULL,
 	CHECK (check_question_answers_idx(answers, array_length(choices, 1))),
-	UNIQUE (task_id, ord),
+	UNIQUE("task_id", "ord"),
 	PRIMARY KEY ("id")
 );
 
 ALTER TABLE "static"."question" ADD CONSTRAINT "Ref_question_to_task"
 	FOREIGN KEY ("task_id") REFERENCES "static"."task"("id")
+	MATCH SIMPLE
+	ON DELETE CASCADE
+	ON UPDATE NO ACTION
+	NOT DEFERRABLE;
+
+-- #######################
+-- # Assignment progress #
+-- #######################
+
+-- Assigment progress maps user to specific assignment.
+CREATE TABLE public.assignment_progress (
+	id SERIAL NOT NULL,
+	user_id int4 NOT NULL,
+	assignment_id int4 NOT NULL,
+	started_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+	UNIQUE("user_id", "assignment_id"),
+	PRIMARY KEY("id")
+);
+
+ALTER TABLE "assignment_progress" ADD CONSTRAINT "Ref_assignment_progress_to_user"
+	FOREIGN KEY ("user_id") REFERENCES "user"("id")
+	MATCH SIMPLE
+	ON DELETE CASCADE
+	ON UPDATE NO ACTION
+	NOT DEFERRABLE;
+
+ALTER TABLE "assignment_progress" ADD CONSTRAINT "Ref_assignment_progress_to_assignment"
+	FOREIGN KEY ("assignment_id") REFERENCES "static"."assignment"("id")
+	MATCH SIMPLE
+	ON DELETE CASCADE
+	ON UPDATE NO ACTION
+	NOT DEFERRABLE;
+
+-- Question progress stores answers to questions within one assignment progress.
+CREATE TABLE public.question_progress (
+	id SERIAL NOT NULL,
+	assignment_progress_id int4 NOT NULL,
+	question_id int4 NOT NULL,
+	answers text[] NOT NULL,
+	PRIMARY KEY("id")
+);
+
+ALTER TABLE "question_progress" ADD CONSTRAINT "Ref_question_progress_to_assignment_progress"
+	FOREIGN KEY ("assignment_progress_id") REFERENCES "assignment_progress"("id")
 	MATCH SIMPLE
 	ON DELETE CASCADE
 	ON UPDATE NO ACTION
