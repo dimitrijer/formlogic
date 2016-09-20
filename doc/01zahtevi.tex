@@ -1,5 +1,43 @@
-\chapter{Zahtevi za realizacijom sistema}
+\chapter{Zahtevi za realizacijom sistema}\label{zahtevi}
 \section{Korisnički zahtevi}
-Zahtevi
+Korisnički zahtevi sistema se mogu podeliti u tri grupe, koje su:
+\begin{enumerate}
+\item Zahtevi za polaganje i pregledanje dostupnih testova od strane studenata
+\item Zahtevi za ocenjivanje i administraciju testova od strane administratora
+\item Zahtevi sistema za parsiranje, transformiranje i renderovanje logičkih izraza i sistema za zaključivanje
+\end{enumerate}
+
 \section{Opis korišćenih tehnologija}
-Tehnologije
+\subsection{Izbor jezika}
+Online sistem poput izrađene web aplikacije se može realizovati u gotovo svim  višim programskim jezicima današnjice. Prednost svakako imaju jezici koji:
+\begin{itemize}
+\renewcommand\labelitemi{--}
+\item su na dovoljno visokom nivou apstrakcije - na primer, podrška za \textit{garbage collection} je obavezna,
+\item koji se mogu izvršavati na velikom broju platformi uz minimalne izmene izvornog koda - pre svega, interpreterski jezici i jezici koji se izvršavaju na virtuelnim mašinama, tj. prevode se u bajtkod,
+\item dolaze sa kvalitetnom i robusnom standardnom bibliotekom, i za koje postoji veliki broj dostupnih \textit{3rd party} biblioteka, i
+\item imaju detaljnu i preglednu dokumentaciju i podršku online zajednice.
+\end{itemize}
+Sa ovim ne pretarano striktnim ograničenjima na umu, prirodno se nameće veliki broj popularnih jezika: Java, C\#, Python, Go, Rust itd.
+
+Međutim, kako autor tokom dužine studija nije imao priliku da izučava još neku paradigmu osim objektno-orijentisanog programiranja, a vođen idejom da jedan alat nikako ne može da bude pravo rešenje za sve probleme, odluka je pala na \textbf{Clojure}. Clojure je moderni dijalekat LISP-a, i samim tim je funkcionalan jezik. Izvorni kod Clojure programa se prevodi na Java bajtkod, koji se izvršava na Java virtuelnoj mašini\footnote{Osim Java bajtkoda, Clojure kod je moguće pokretati i na \textit{Common Language Runtime} mašini i JavaScript mašini.}. Zbog toga Clojure, pored već bogatog ekosistema raznoraznih biblioteka, ima pristup svim bibliotekama pisanim u Javi. Takođe, Clojure ima veoma aktivnu zajednicu, kao i veliki broj knjiga \cite{Emerick:2012:CP} \cite{Higginbotham:2015:CBT}, priručnika, tutorijala i resursa za učenje.
+
+Jedna prednost Clojure jezika nad Javom, koju će autor naučiti da veoma ceni, jeste postojanje \textbf{REPL} (\textit{read-eval-print-loop}) funkcionalnosti. Radi se o interaktivnoj konzoli u kojoj je moguće unositi i evaluirati delove Clojure koda, veoma slično Python interpreteru. Uz činjenicu da su većina Clojure funkcija \textit{pure}\footnote{"Čiste" funkcije uvek vraćaju isti rezultat za iste argumente, i nemaju bočne efekte.}, REPL omogućava unikatan način razvijanja aplikacije, gde je osnovna celina razvoja i testiranja funkcija.
+
+Izrađena web aplikacija se sastoji od dva snažno spregnuta dela: \emph{frontend} sistema i \emph{backend} sistema. Kao što im ime kaže, frontend deo je zadužen za prezentacioni sloj i obradu unosa, dok je backend sistem zadužen za perzistenciju i serviranje sadržaja, i veći deo poslovne logike.
+
+\subsection{Backend}
+
+\paragraph{HTTP server}
+\emph{Ring}\cite{ring} je apstrakcija HTTP servera koja preko veoma jednostavnog API-ja \cite{ring-spec} omogućava korisniku da se fokusira na implementaciju hendlera (tj. poslovne logike), bez ulaženja u detalje HTTP protokola. API definiše HTTP zahtev i HTTP odgovor kao dve obične Clojure mape, a hendlere kao funkcije koje imaju jedan argument (mapu zahteva) i vraćaju odgovor kao mapu. Zbog toga što Ring predstavlja apstrakciju HTTP servera, Ring web aplikacije mogu da se distribuiraju kao WAR aplikacije i pokreću unutar standardnih kontejnera za web aplikacije (npr. Tomcat), ili da se pokrenu same pomoću \textit{embedded} Jetty web servera.
+
+\paragraph{Rutiranje}
+Ring API je previše jednostavan za neke iole ozbiljnije zahteve, te je zbog toga nastao \emph{Compojure}\cite{compojure}, koji je \textit{routing} biblioteka za Clojure. Jednostavno rečeno, ova biblioteka prosleđuje određene HTTP zahteve (\texttt{GET}, \texttt{POST} itd.) za URI putanjama (tj. resursima) hendlerima koji ih obrađuju. Tako je, na primer, moguće napraviti hendler koji vraća početnu stranicu ukoliko se ka serveru uputi HTTP \texttt{GET} zahtev za \texttt{/index.html} resursom. Međutim, \texttt{POST} zahtevi ka istom resursu će biti odbijeni sa statusom \texttt{403 Forbidden}. Ovaj postupak uparivanja resursa i hendlera se naziva rutiranje.
+
+\paragraph{Perzistencija}
+Kako korisnički zahtevi nameću, svi podaci o testovima, polaganju testova, registrovanim korisnicima itd. moraju se trajno negde smestiti, tj. moraju biti perzistentni. Standardna rešenja za perzistenciju predstavljaju relacione baze podataka. Autor se odlučio za \emph{PostgreSQL}\cite{postgres}, pre svega zbog postojećeg iskustva sa ovim RDBM sistemom.
+
+\paragraph{ORM} Objektno-relaciono mapiranje je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajućih objekata u relacionoj bazi. Iako su Clojure programima dostupne Java biblioteke koje predstavljaju industrijski standard (na primer, Hibernate), autor se odlučio za laganiju varijantu - za pristup bazi se koristi JDBC drajver za Postgres i mala Clojure biblioteka zvana \emph{YeSQL}\cite{yesql}. Ova biblioteka čita SQL skripte sa upitima, i za svaki upit pravi Clojure funkciju preko kojih je moguće proslediti imenovane parametre u upit, na sličan način na koji se to radi sa \texttt{NamedQuery} objektima u JPL-u.
+
+\paragraph{Logovanje} Za logovanje se koriste već dobro poznata rešenja u vidu \emph{Log4j} biblioteke i \emph{SLF4j} fasade. Konfiguracija se vrši putem tekstualnog fajla.
+
+\subsection{Frontend}

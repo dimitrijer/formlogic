@@ -1,5 +1,12 @@
+# Latex temp files.
 *.aux
 *.fls
 *.log
 *.*latexmk
 *.pdf
+*.bbl
+*.blg
+*.run.xml
+*.bcf
+*.toc
+*.synctex.gz
