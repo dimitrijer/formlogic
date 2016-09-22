@@ -55,10 +55,10 @@ manually:
 ...
 
 ### Nice To Have
+* OpenSSL
+* Reset password
 * Remember Me functionality (via cookies)
 * Log each request start and end, and keep started time in session.
-### That You Think
-### Might be Useful
 
 ## License
 
