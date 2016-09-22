@@ -170,11 +170,11 @@
      [:li (elem/link-to "/" "Else")]]
     [:ul {:class "nav navbar-nav navbar-right"}
      [:li [:p {:class "navbar-text"} [:span {:class "glyphicon glyphicon-user"}] " " email]]
-     [:li (elem/link-to "/logout" [:span {:class "glyphicon glyphicon-log-out"}] " Odjava")]]]])
+     [:li (elem/link-to "/user/logout" [:span {:class "glyphicon glyphicon-log-out"}] " Odjava")]]]])
 
 (defn panel-column
-  [panel-class title & contents]
-  [:div {:class "col-lg-6"}
+  [panel-class div-args title & contents]
+  [:div div-args
    [:div {:class (str "panel " panel-class)}
     [:div {:class "panel-heading"} title]
     [:div {:class "panel-body"} contents]]])
@@ -229,22 +229,26 @@
             assignment-name])]])]))
 
 (defn task-page
-  [user task questions-map]
+  [user assignment-id task questions-map]
   (page-template
     "Pitanja"
     (navbar (:email user))
     [:h1 {:class "text-center"} "Zadatak 1"]
     [:h3 "Stranica 2"]
     [:div {:class "row"}
-     (panel-column "panel-default" "Demonstracija")
-     (panel-column "panel-primary" "Pitanja"
+     (let [only-questions (nil? (:contents task))]
+       (when-not only-questions (panel-column "panel-default" "Demonstracija"))
+     (panel-column "panel-primary" {:class (str (when only-questions "col-lg-offset-3 ") "col-lg-6")} "Pitanja"
                    [:form {:name "taskForm"
                            :novalidate ""
                            :role "form"
                            :method "post"
-                           :action "/user/answers"}
+                           :action "/user/progress/" }
                     (anti-forgery-field)
                     (for [question questions-map]
                       (render-question (:question question)))
-                    [:button {:class "btn btn-primary btn-block" :type "submit"} "Sledeće"]])
+                    [:div {:class "row"}
+                    [:button {:class "col-lg-offset-1 col-lg-3 btn btn-default" :type "submit"} (h "Nazad")]
+                    [:button {:class "col-lg-offset-3 col-lg-3 btn btn-primary" :type "submit"} (h "Sačuvaj & Dalje")]
+                    ]]))
      ]))

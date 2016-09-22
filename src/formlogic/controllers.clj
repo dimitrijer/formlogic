@@ -65,6 +65,16 @@
       (log/error "User" email "tried to register, but does not match email pattern!")
       (views/register-page :alert ["Navedeni email je pogrešnog formata!"]))))
 
+(defn logout
+  [session]
+  (if-let [user (:user session)]
+    (do
+      (log/debug "User" (:email user) "logged out.")
+      (-> (resp/found "/login") (assoc :session nil)))
+    (do
+      (log/error "Tried to log out, but user is not logged in yet!")
+      (views/login-page))))
+
 (defn attach-progress
   [session user assignment-id]
   (let [assignment-progress (db/get-or-create-progress user assignment-id)
@@ -91,7 +101,7 @@
                                  {:connection tx})]
         ;; Render task page with collected data, but first map question to its
         ;; progress.
-        (views/task-page (:user session) task
+        (views/task-page (:user session) assignment-progress task
                          (into [] (map
                                     (fn [question] {:question (db/unwrap-arrays question)
                                                     :progress (first (filter
