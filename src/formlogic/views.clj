@@ -20,7 +20,6 @@
           [:title (h title)]
           (include-js "/js/angular.min.js"
                       "/js/angular-sanitize.min.js")
-          (include-js "/js/ui-bootstrap-tpls-2.1.3.min.js")
           (include-js "/js/script.js")
           (include-css "/css/style.css")
           (include-css "/css/bootstrap.min.css")
