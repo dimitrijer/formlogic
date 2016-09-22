@@ -25,12 +25,12 @@ Svaki test treba da se sastoji iz određenog broja pitanja, grupisanih po strani
 \item pitanja sa više ponuđenih i više tačnih odgovora - odgovarajuća komponenta je \textit{checkbox}, i
 \item pitanja sa odgovorom u slobodnom stilu - odgovarajuća komponenta je tekstualno polje.
 \end{itemize}
-Primer jedne stranice sa pitanjima dat je na slici \ref{fig-test}.
-\begin{figure}[h]
-\label{fig-test}
+Primer jedne stranice sa pitanjima dat je na slici \ref{fig:test-mockup}.
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{test-mockup}
 \caption{UI \textit{mockup} stranice za polaganje testova}
+\label{fig:test-mockup}
 \end{figure}
 
 Korisnik može slobodno da se kreće kroz stranice sa pitanjima. Pri tome se čuvaju uneti odgovori na pitanja. Korisnik može preskočiti neka pitanja, ali mu se tada, pre predavanja testa, prikazuje upozorenje da na neka pitanja nije dat odgovor.
@@ -57,13 +57,15 @@ Jedna prednost Clojure-a nad Javom, koju će autor vremenom naučiti da veoma ce
 
 Izrađena web aplikacija se sastoji od dva snažno spregnuta dela: \emph{frontend} sistema i \emph{backend} sistema. Kao što im ime kaže, frontend deo je zadužen za prezentacioni sloj i obradu unosa, dok je backend sistem zadužen za perzistenciju i serviranje sadržaja, i veći deo poslovne logike.
 
-\subsection{Backend}
+\subsection{Backend tehnologije}
 
 \paragraph{HTTP server}
 \emph{Ring}\cite{ring} je apstrakcija HTTP servera koja preko veoma jednostavnog API-ja\footnote{\url{https://github.com/ring-clojure/ring/blob/master/SPEC}} omogućava korisniku da se fokusira na implementaciju hendlera (tj. poslovne logike), bez ulaženja u detalje HTTP protokola. API definiše HTTP zahtev i HTTP odgovor kao dve obične Clojure mape, a hendlere kao funkcije koje imaju jedan argument (mapu zahteva) i vraćaju odgovor kao mapu. Zbog toga što Ring predstavlja apstrakciju HTTP servera, Ring web aplikacije mogu da se distribuiraju kao WAR aplikacije i pokreću unutar standardnih kontejnera za web aplikacije (npr. Tomcat), ili da se pokrenu same pomoću \textit{embedded} Jetty web servera, što je za potrebe ove web aplikacije više nego dovoljno.
 
 \paragraph{Rutiranje}
 Ring API je previše jednostavan za neke iole ozbiljnije zahteve, te je zbog toga nastao \emph{Compojure}\cite{compojure}, koji je \textit{routing} biblioteka za Clojure. Jednostavno rečeno, ova biblioteka prosleđuje određene HTTP zahteve (\texttt{GET}, \texttt{POST} itd.) za URI putanjama (tj. resursima) hendlerima koji ih obrađuju. Tako je, na primer, moguće napraviti hendler koji vraća početnu stranicu ukoliko se ka serveru uputi HTTP \texttt{GET} zahtev za \texttt{/index.html} resursom. Međutim, \texttt{POST} zahtevi ka istom resursu će biti odbijeni sa statusom \texttt{403 Forbidden}. Ovaj postupak uparivanja resursa i hendlera se naziva rutiranje.
+
+\paragraph{Šabloni} Server generiše HTML stranice na upit pomoću mašine za šablone (\textit{template engine}). U ovu svrhu je korišćena jednostavna Clojure biblioteka pod nazivom \emph{Hiccup}\footnote{\url{https://github.com/weavejester/hiccup}}. Jedinstvena je po tome što nema statičke šablonske fajlove, već DOM stablo HTML dokumenta predstavlja preko Clojure struktura podataka, na primer \texttt{[:div \string{:id "header"\string} [:h1 "Header"]]}.
 
 \paragraph{Perzistencija}
 Kako korisnički zahtevi nameću, svi podaci o testovima, polaganju testova, registrovanim korisnicima itd. moraju se trajno negde smestiti, tj. moraju biti perzistentni. Standardna rešenja za perzistenciju predstavljaju relacione baze podataka. Autor se odlučio za \emph{PostgreSQL}\cite{postgres}, pre svega zbog postojećeg iskustva sa ovim RDBM sistemom.
@@ -73,4 +75,6 @@ ORM je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajuć
 
 \paragraph{Logovanje} Za logovanje se koriste već dobro poznata rešenja u vidu \emph{Log4j} biblioteke i \emph{SLF4j} fasade. Konfiguracija se vrši putem tekstualnog fajla.
 
-\subsection{Frontend}
+\subsection{Frontend tehnologije}
+
+\emph{AngularJS}\cite{angularjs} je korišćen kao \textit{de facto} standard za frontend JavaScript framework, u kombinaciji sa \emph{Bootstrap}\cite{bootstrap} CSS stilovima. Angular je uglavnom korišćen za validaciju obrazaca i POST zahteve ka serveru u pozadini, dok Bootstrap obezbeđuje podrazumevanu temu ugodnu za oko, ikonice, i fluidan \textit{layout} stranice koji automatski prilagođava stranicu tipu uređaja, bilo da je to desktop ili mobilni internet pregledač. HTML stranice su u skladu sa HTML5 standardom.
