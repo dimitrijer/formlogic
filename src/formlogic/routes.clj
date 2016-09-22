@@ -32,7 +32,7 @@
   (POST "/login" [email password :as req] (controllers/login email password req))
   (GET "/register" [] (views/register-page))
   (POST "/register" [email] (controllers/register email))
-  (handlers/wrap-user-session-check #'user-routes)
+  (wrap-routes #'user-routes handlers/wrap-user-session-check)
   (route/not-found views/not-found-page))
 
 ;; Note that every time we reload this page, a new in-memory session store is
