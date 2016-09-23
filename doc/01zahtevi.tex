@@ -16,15 +16,19 @@ Nakon što se korisnik uloguje, preko kolačića u pregledaču treba da se pamti
 Korisnik treba da ima izbor da se izloguje kada poželi, i time invalidira korisničku sesiju.
 
 \subsubsection{Pregled testova}
-Nakon uspešnog logovanja, korisnik treba da vidi spisak svih testova koje trenutno može da polaže, grupisanih po oblasti. Među ovim testovima treba da se nalaze i testovi koje je korisnik već polagao - oni trebaju biti onemogućeni, tj. korisniku ne sme biti dozvoljeno da više puta polaže isti test. Za testove koje su položeni treba da se naznači datum polaganja i uspešnost, tj. broj pitanja na koje je student tačno odgovorio u odnosu na ukupan broj pitanja na testu. Za testove koji su u toku, tj. čije je polaganje korisnik započeo, ali nije završio, treba naznačiti trenutni progres, odnosno broj pitanja na koja je student dao odgovor naspram ukupnog broja pitanja na testu.
+Nakon uspešnog logovanja, korisnik treba da vidi spisak svih testova koje trenutno može da polaže, testova čije je polaganje u toku, i testova koji su završeni, i to grupisanih po oblastima.
+
+Testovi koji su završeni trebaju biti onemogućeni, tj. korisniku ne sme biti dozvoljeno da više puta polaže isti test. Za ovakve testove treba naznačiti i datum polaganja i uspešnost, tj. broj pitanja na koje je student tačno odgovorio u odnosu na ukupan broj pitanja na testu.
+
+Za testove koji su u toku, tj. čije je polaganje korisnik započeo, ali nije završio, treba naznačiti trenutni progres, odnosno broj pitanja na koja je student dao odgovor naspram ukupnog broja pitanja na testu.
 
 \subsubsection{Polaganje testova}
-Svaki test treba da se sastoji iz određenog broja pitanja, grupisanih po stranicama. Svaka stranica, uz pitanja, može opciono da sadrži i \textit{demonstraciju}, koja može biti slika, animacija, jednačina, interaktivni element itd. Postoje tri tipa pitanja:
-\begin{itemize}
+Svaki test treba da se sastoji iz određenog broja pitanja, grupisanih po stranicama. Svaka stranica, uz pitanja, može opciono da sadrži i \emph{demonstraciju}, koja može biti slika, animacija, jednačina, interaktivni element itd. Postoje tri tipa pitanja:
+\begin{enumerate}
 \item pitanja sa više ponuđenih, a jednim tačnim odgovorom - odgovarajuća komponenta je \textit{radio button},
 \item pitanja sa više ponuđenih i više tačnih odgovora - odgovarajuća komponenta je \textit{checkbox}, i
 \item pitanja sa odgovorom u slobodnom stilu - odgovarajuća komponenta je tekstualno polje.
-\end{itemize}
+\end{enumerate}
 Primer jedne stranice sa pitanjima dat je na slici \ref{fig:test-mockup}.
 \begin{figure}[ht]
 \centering
@@ -38,6 +42,83 @@ Korisnik može slobodno da se kreće kroz stranice sa pitanjima. Pri tome se ču
 Nakon što korisnik odgovori na sva pitanja sa testa, na poslednjoj stranici treba da se pojavi dugme za predavanje testa. Kada korisnik klikne na ovo dugme, test treba da bude automatski ocenjen i trajno unet u bazu. Korisnika tada treba vratiti na stranicu za pregled testova. Time je proces polaganja testa završen.
 
 Ukoliko korisnik u bilo kom trenutku prekine polaganje testa, potrebno je omogućiti nastavljanje polaganja prilikom sledećeg logovanja korisnika. Naravno, treba restaurirati dotadašnji progres polaganja testa.
+
+\subsection{Druga grupa zahteva}
+Druga grupa zahteva je vezana za oblast formalne logike, i odnosi se na unos, transformaciju i prikazivanje logičkih izraza.
+
+Za potrebe demonstracije određenih algoritama, kao i za potrebe unosa odgovora na pitanja iz ove oblasti, neophodno je omogućiti unos stavova predikatske logike. Pod ovim se podrazumevaju \textbf{dobro formirane formule} (\textit{well-formed formulae}, skraćeno \textit{wff}, dalje u tekstu samo formule). Formule se sastoje od sledećih elemenata:
+\begin{itemize}
+\item \textbf{logičkih promenljivih}, koje se obeležavaju malim slovima abecede, na primer $x$ ili $var$,
+\item \textbf{predikata ili funkcija}, koji se navode kao reči abecede sa velikim početnim slovom, praćene proizvoljnim brojem logičkih promenljivih, i/ili drugih predikata ili funkcija kao argumentima, npr. $\mathit{Na}(x, y)$, $\mathit{MANJE}(a, b)$ ili $\mathit{PlusJedan}(var)$,
+\item \textbf{logičkih operatora}, poimence:
+\begin{itemize}
+\item binarnog operatora \emph{konjukcije} $\land$,
+\item binarnog operatora \emph{disjunkcije} $\lor$,
+\item binarnog operatora \emph{implikacije} $\implies$,
+\item unarnog operatora \emph{negacije} $\neg$,
+\end{itemize}
+\item \textbf{logičkih kvantifikatora}, tačnije:
+\begin{itemize}
+\item \emph{univerzalnog} kvantifikatora $\forall$, i
+\item \emph{egzistencijalnog} kvantifikatora $\exists$
+\end{itemize}
+\end{itemize}
+I pored bogatog skupa logičkih simbola, unos formula mora biti moguć preko standardnih znakova koji se unose preko tastature, ili preko ekrana mobilnog uređaja. Osim toga, neophodno je obezbediti i proveru da li je neki arbitraran unos zaista formula. Ova provera bi se idealno mogla izvršavati uporedo sa unosom, nakon svakog unešenog karaktera.
+
+Nezavisno od načina unosa formula, treba implementirati i renderovanje formula, sa akcentom na čitljivosti. U idealnom slučaju, formule treba prikazati u \LaTeX \space \textit{typesetting} formatu.
+
+Kada se govori o transformaciji formula, misli se na svođenje na \textbf{konjuktivnu normalnu formu} (\textit{conjuctive normal form}, skraćeno KNF). Pre definisanja konjuktivne normalne forme, zgodno je uvesti par definicija:
+\begin{itemize}
+\item \textbf{Atom} je najprostija dobro formirana formula koja se sastoji od logičke varijable ili predikata.
+\item \textbf{Literal} je atom ili njegova negacija.
+\item \textbf{Klauzula} je skup literala međusobno povezanih disjunkcijama.
+\end{itemize}
+Sada se konjuktivna normalna forma može definisati kao \emph{konjukcija klauzula}. Iz ovoga sledi da se u KN formi ne pojavljuju kvantifikatori niti operator implikacije, i da je logički operator negacije u KN formi spušten do atomskog nivoa. Značaj KN forme je u tome što je veoma pogodna za korišćenje od strane sistema za automatsko rezonovanje (zaključivanje).
+
+Algoritam transformacije formule u KNF sastoji se od sledećih koraka:
+\begin{enumerate}
+\item Eliminisanje implikacija
+$$ x \implies y \equiv \neg x \lor y $$
+\item Primena DeMorgan-ovih zakona i spuštanje negacija do atomskog nivoa
+\begin{align*}
+\neg(x \land y) &\equiv \neg x \lor \neg y \\
+\neg(x \lor y) &\equiv \neg x \land \neg y \\
+\neg (\neg x) &\equiv x \\
+\neg \forall x \, (P(x)) &\equiv \exists x \, (\neg P(x)) \\
+\neg \exists x \, (P(x)) &\equiv \forall x \, (\neg P(x))
+\end{align*}
+\item Zamena egzistencijalnih kvantifikatora arbitrarnim funkcijama. čiji su argumenti sve promenljive vezane univerzalnim kvantifikatorom na tom mestu u formuli
+$$ \forall x \; \exists y \, (P(x, y)) \equiv \forall x \, (P(x, \Phi(y))) $$
+\item Preimenovanje varijabli tako da svakom kvantifikatoru odgovara unikatna promenljiva, na primer:
+$$ \forall x \, (P(x)) \land \forall x \, (Q(x)) \equiv
+\forall x \, (P(x)) \land \forall y \, (Q(y)) $$
+\item Premeštanje univerzalnih kvantifikatora na početak formule, bez promene redosleda, na prethodnom primeru:
+$$ \forall x\, (P(x)) \land \forall y \, (Q(y)) \equiv
+\forall x \; \forall y \, (P(x) \land Q(y)) $$
+\item Spuštanje disjunkcija do atomskog nivoa (osobina asocijativnosti)
+$$ (x \land y) \lor z \equiv (x \lor z) \land (y \lor z) $$
+\item Eliminacija konjukcija razdvajanjem operanada na posebne formule
+\begin{align*}
+\forall x \; \forall y \; \forall z \, ((x \lor y) \land (y \lor a) \land (z \lor a)) \equiv \; &\forall x \; \forall y \, (x \lor y) \\
+&\forall y \, (y \lor a) \\
+&\forall z \, (z \lor a)
+\end{align*}
+\item Preimenovanje varijabli tako da ne postoje formule sa istim univerzalnim kvantifikatorima, na prethodnom primeru:
+\begin{align*}
+&\forall x \; \forall y \, (x \lor y) \\
+&\forall w \, (w \lor a) \\
+&\forall z \, (z \lor a)
+\end{align*}
+\item Uklanjanje kvantifikatora, na prethodnom primeru:
+\begin{align*}
+& x \lor y \\
+& w \lor a \\
+& z \lor a
+\end{align*}
+\end{enumerate}
+Kao deo zahteva druge grupe, neophodno je implementirati automatsku konverziju unesene formule u KNF, sa mogućnošću prikaza rada algoritma po koracima.
+
+% dodati algoritme rezonovanja
 
 \section{Opis korišćenih tehnologija}
 \subsection{Izbor jezika}
@@ -72,6 +153,8 @@ Kako korisnički zahtevi nameću, svi podaci o testovima, polaganju testova, reg
 
 \paragraph{Objektno-relaciono mapiranje}
 ORM je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajućih objekata u relacionoj bazi. Iako su Clojure programima dostupne Java biblioteke koje predstavljaju industrijski standard (na primer, Hibernate), autor se odlučio za laganiju varijantu - za pristup bazi se koristi JDBC drajver za Postgres i mala Clojure biblioteka zvana \emph{YeSQL}\footnote{\url{https://github.com/krisajenkins/yesql}}. Ova biblioteka čita SQL skripte sa upitima, i za svaki upit pravi Clojure funkciju preko kojih je moguće proslediti imenovane parametre u upit, na sličan način na koji se to radi sa \texttt{NamedQuery} objektima u \textit{Java Persistence Language}-u. Nije razmatrana upotreba \textit{connection pooling}-a za konekcije ka bazi. Međutim, ukoliko se ukaže potreba za time, dodavanje takve biblioteke je prosto.
+
+\paragraph{Parsiranje logičkih jednačina} Mesto ručne izrade leksera i parsera za unošenje logičkih jednačina, autor se odlučio da iskoristi sjajnu Clojure biblioteku \emph{Instaparse}\cite{instaparse} za generaciju parsera bezkontekstnih gramatika. Ova biblioteka generiše parser na osnovu specifikacije gramatike u EBNF obliku. Pri tome podržava levu i desnu rekurziju i regularne izraze. Izlaz parsera je stablo parsiranja u obliku standardnog Clojure vektora. Instaparse može da parsira i dvosmislene gramatike, tako što vraća sekvencu svih mogućih stabala parsiranja.
 
 \paragraph{Logovanje} Za logovanje se koriste već dobro poznata rešenja u vidu \emph{Log4j} biblioteke i \emph{SLF4j} fasade. Konfiguracija se vrši putem tekstualnog fajla.
 
