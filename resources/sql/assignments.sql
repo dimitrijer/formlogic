@@ -15,8 +15,8 @@ VALUES (1, 2);
 
 INSERT INTO static.question(task_id, ord, type, body, choices, answers)
 VALUES
-(2, 1, 'fill', 'Koja je najduža reka u Srbiji?', '{"Morava"}', '{0}'::int2[]),
-(2, 2, 'single', 'Šta je gluten?', '{"protein", "lipid", "dekstroza"}', '{0}'::int2[]);
+(2, 4, 'fill', 'Koja je najduža reka u Srbiji?', '{"Morava"}', '{0}'::int2[]),
+(2, 5, 'single', 'Šta je gluten?', '{"protein", "lipid", "dekstroza"}', '{0}'::int2[]);
 
 INSERT INTO static.assignment(id, name, category)
 VALUES (2, 'Svođenje na KNF', 'Ekspertski sistemi');

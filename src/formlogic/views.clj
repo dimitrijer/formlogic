@@ -239,23 +239,32 @@
     [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
     [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
     [:div {:class "row"}
-     (let [only-questions (nil? (:contents task))
-           first-task? (= 1 (:ord task))]
-       (when-not only-questions (panel-column "panel-default" "Demonstracija"))
-       (panel-column "panel-primary" {:class (str (when only-questions "col-lg-offset-3 ") "col-lg-6")} "Pitanja"
+     (let [only-questions? (nil? (:contents task))
+           first-task? (= 1 (:ord task))
+           assignment-progress-id (get-in assignment-progress [:assignment :id])]
+       (when-not only-questions? (panel-column "panel-default" "Demonstracija"))
+       (panel-column "panel-primary"
+                     {:class (str (when only-questions? "col-lg-offset-3 ")
+                                  "col-lg-6")} "Pitanja"
                      [:form {:name "taskForm"
                              :novalidate ""
                              :role "form"
                              :method "post"
                              :action (str "/user/progress/"
-                                          (get-in assignment-progress [:assignment :id])
+                                          assignment-progress-id
                                           "/"
                                           (:ord task))}
                       (anti-forgery-field)
                       (for [question questions]
                         (render-question question))
                       [:div {:class "row"}
-                       (when-not first-task? [:button {:class "col-lg-offset-1 col-lg-3 btn btn-default" :type "submit"} (h "Nazad")])
+                       (when-not first-task?
+                         (button-link (str "/user/progress/"
+                                           assignment-progress-id
+                                           "/"
+                                           (dec (:ord task)))
+                                      "Nazad"
+                                      "col-lg-offset-1 col-lg-3 btn btn-default"))
                        [:button {:class (str (if first-task?
                                                "col-lg-offset-7"
                                                "col-lg-offset-3")
