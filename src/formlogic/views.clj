@@ -233,25 +233,31 @@
 
 (defn task-page
   [user assignment-progress {:keys [task questions]}]
-  (page-template
-    "Pitanja"
-    (navbar (:email user))
-    [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
-    [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
-    [:div {:class "row"}
-     (let [only-questions? (nil? (:contents task))
-           first-task? (= 1 (:ord task))
-           assignment-progress-id (get-in assignment-progress [:assignment :id])]
-       (when-not only-questions? (panel-column "panel-default" "Demonstracija"))
+  (let [only-questions? (nil? (:contents task))
+        first-task? (= 1 (:ord task))
+        assignment-id (get-in assignment-progress [:assignment :id])]
+    (page-template
+      "Pitanja"
+      (navbar (:email user))
+      [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
+      [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
+      [:div {:class "row"}
+       (when-not only-questions?
+         (panel-column "panel-default"
+                       {:class "col-lg-6"}
+                       "Demonstracija"
+                       ;; Eval magic right here.
+                       (eval (read-string (:contents task)))))
        (panel-column "panel-primary"
                      {:class (str (when only-questions? "col-lg-offset-3 ")
-                                  "col-lg-6")} "Pitanja"
+                                  "col-lg-6")}
+                     "Pitanja"
                      [:form {:name "taskForm"
                              :novalidate ""
                              :role "form"
                              :method "post"
                              :action (str "/user/progress/"
-                                          assignment-progress-id
+                                          assignment-id
                                           "/"
                                           (:ord task))}
                       (anti-forgery-field)
@@ -260,7 +266,7 @@
                       [:div {:class "row"}
                        (when-not first-task?
                          (button-link (str "/user/progress/"
-                                           assignment-progress-id
+                                           assignment-id
                                            "/"
                                            (dec (:ord task)))
                                       "Nazad"
@@ -269,4 +275,4 @@
                                                "col-lg-offset-7"
                                                "col-lg-offset-3")
                                              " col-lg-3 btn btn-primary")
-                                 :type "submit"} (h "Sačuvaj & Dalje")]]]))]))
+                                 :type "submit"} (h "Sačuvaj & Dalje")]]])])))

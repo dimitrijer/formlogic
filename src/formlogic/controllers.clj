@@ -182,15 +182,13 @@
                     questions))
         (let [user (:user session)
               next-task-ord (inc task-ord)
-              assignment-id (:id assignment-progress)
+              assignment-id (get-in assignment-progress [:assignment :id])
               next-task (db/unique-result db/find-task-by-assignment-id
                                           {:assignment_id assignment-id
                                            :ord next-task-ord}
                                           {:connection tx})]
           (if next-task
             ;; Move on to next page.
-            (views/task-page user
-                             assignment-progress
-                             (collect-task-progress assignment-progress next-task-ord tx))
+            (resp/found (str "/user/progress/" assignment-id  "/" next-task-ord))
             ;; All done, move on to home page.
-            (views/user-page user)))))))
+            (resp/found (str "/user"))))))))
