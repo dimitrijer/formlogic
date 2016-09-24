@@ -174,12 +174,23 @@
       (let [questions (collect-questions assignment-progress task-ord tx)]
         ;; Update question progress with answers.
         (doall (map #(update-question-progress
-                (:user session)
-                assignment-progress
-                %
-                (extract-answers % answers)
-                tx)
-             questions))
-        (views/task-page (:user session)
-                         assignment-progress
-                         (collect-task-progress assignment-progress task-ord tx))))))
+                       (:user session)
+                       assignment-progress
+                       %
+                       (extract-answers % answers)
+                       tx)
+                    questions))
+        (let [user (:user session)
+              next-task-ord (inc task-ord)
+              assignment-id (:id assignment-progress)
+              next-task (db/unique-result db/find-task-by-assignment-id
+                                          {:assignment_id assignment-id
+                                           :ord next-task-ord}
+                                          {:connection tx})]
+          (if next-task
+            ;; Move on to next page.
+            (views/task-page user
+                             assignment-progress
+                             (collect-task-progress assignment-progress next-task-ord tx))
+            ;; All done, move on to home page.
+            (views/user-page user)))))))

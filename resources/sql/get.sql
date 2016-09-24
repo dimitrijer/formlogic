@@ -36,3 +36,6 @@ INNER JOIN static.question q ON qp.question_id = q.id
 WHERE assignment_progress_id = :assignment_progress_id
       AND question_id IN (SELECT id FROM static.question WHERE task_id = :task_id)
 ORDER BY ord;
+
+-- name: find-next-task-id
+SELECT * FROM static.task WHERE assignment_id = :assignment_id AND ord = :ord + 1;
