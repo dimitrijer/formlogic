@@ -18,11 +18,18 @@
                                                       user
                                                       assignment-id))
     (GET "/progress/:assignment-id/:task" [assignment-id task]
-         (or (controllers/render-task session assignment-id task)
+         (or (controllers/render-task session assignment-id (Integer/parseInt task))
              (-> (resp/forbidden views/forbidden-page)
                  (resp/content-type "text/html")
                  (resp/charset "utf-8"))))
-    (POST "/answers" [question1] (log/spy question1))))
+    (POST "/progress/:assignment-id/:task" [assignment-id task]
+          (or (controllers/save-task session
+                                     assignment-id
+                                     (Integer/parseInt task)
+                                     (:form-params req))
+              (-> (resp/forbidden views/forbidden-page)
+                  (resp/content-type "text/html")
+                  (resp/charset "utf-8"))))))
 
 (defroutes site-routes
   (GET "/" {session :session} (if (contains? session :user)

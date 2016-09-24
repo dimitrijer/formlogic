@@ -1,6 +1,5 @@
 (ns formlogic.views
   (:require [hiccup.element :as elem]
-            [formlogic.user.account :as account]
             [clojure.tools.logging :as log]
             [clojure.string :as str]
             [formlogic.db :as db])
@@ -184,29 +183,34 @@
          (str ord ". " body)))
 
 (defn multiple-choice-question
-  [question]
+  [question progress]
   (let [radio? (= (:type question) "single")
         elem-class (if radio? "radio" "checkbox")
-        elem-id (fn [idx] (str "question" (:id question) (when-not radio? (str "-option-" idx))))
-        elem-factory (if radio? radio-button check-box)]
+        elem-id (fn [idx] (str "question"
+                               (:id question)
+                               (when-not radio? (str "-option-" idx))))
+        elem-factory (if radio? radio-button check-box)
+        active? (fn [choice] (some #{choice} (:answers progress)))]
   [:div {:class "form-group"}
    (question-label question)
    (for [choice (map-indexed vector (:choices question))
          :let [[idx text] choice]]
      [:div {:class elem-class}
-      [:label (elem-factory (elem-id idx) false (h text)) (h text)]])]))
+      [:label (elem-factory (elem-id idx) (active? text) (h text)) (h text)]])]))
 
 (defn fill-question
-  [{id :id :as question}]
-    [:div {:class "form-group"}
-     (question-label question)
-     (text-area {:class "form-control" :rows "3"} (str "question" id "-fill"))])
+  [{id :id :as question} progress]
+  [:div {:class "form-group"}
+   (question-label question)
+   (text-area {:class "form-control" :rows "3"}
+              (str "question" id "-fill")
+              (first (:answers progress)))])
 
 (defn render-question
-  [question]
+  [{:keys [question progress]}]
   (case (:type question)
-    ("single" "multiple") (multiple-choice-question question)
-    "fill" (fill-question question)))
+    ("single" "multiple") (multiple-choice-question question progress)
+    "fill" (fill-question question progress)))
 
 (defn user-page
   [user]
@@ -228,26 +232,32 @@
             assignment-name])]])]))
 
 (defn task-page
-  [user assignment-id task questions-map]
+  [user assignment-progress {:keys [task questions]}]
   (page-template
     "Pitanja"
     (navbar (:email user))
-    [:h1 {:class "text-center"} "Zadatak 1"]
-    [:h3 "Stranica 2"]
+    [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
+    [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
     [:div {:class "row"}
-     (let [only-questions (nil? (:contents task))]
+     (let [only-questions (nil? (:contents task))
+           first-task? (= 1 (:ord task))]
        (when-not only-questions (panel-column "panel-default" "Demonstracija"))
-     (panel-column "panel-primary" {:class (str (when only-questions "col-lg-offset-3 ") "col-lg-6")} "Pitanja"
-                   [:form {:name "taskForm"
-                           :novalidate ""
-                           :role "form"
-                           :method "post"
-                           :action "/user/progress/" }
-                    (anti-forgery-field)
-                    (for [question questions-map]
-                      (render-question (:question question)))
-                    [:div {:class "row"}
-                    [:button {:class "col-lg-offset-1 col-lg-3 btn btn-default" :type "submit"} (h "Nazad")]
-                    [:button {:class "col-lg-offset-3 col-lg-3 btn btn-primary" :type "submit"} (h "Sačuvaj & Dalje")]
-                    ]]))
-     ]))
+       (panel-column "panel-primary" {:class (str (when only-questions "col-lg-offset-3 ") "col-lg-6")} "Pitanja"
+                     [:form {:name "taskForm"
+                             :novalidate ""
+                             :role "form"
+                             :method "post"
+                             :action (str "/user/progress/"
+                                          (get-in assignment-progress [:assignment :id])
+                                          "/"
+                                          (:ord task))}
+                      (anti-forgery-field)
+                      (for [question questions]
+                        (render-question question))
+                      [:div {:class "row"}
+                       (when-not first-task? [:button {:class "col-lg-offset-1 col-lg-3 btn btn-default" :type "submit"} (h "Nazad")])
+                       [:button {:class (str (if first-task?
+                                               "col-lg-offset-7"
+                                               "col-lg-offset-3")
+                                             " col-lg-3 btn btn-primary")
+                                 :type "submit"} (h "Sačuvaj & Dalje")]]]))]))
