@@ -37,7 +37,7 @@
                                            query-params)]
     (if-not assignment-progress
       ;; Create new progress.
-      (let [assignment-progress-id (insert-progress! query-params)]
+      (let [assignment-progress-id (insert-progress<! query-params)]
         (log/debug "User" (:email user)
                    "started progress of assignment" assignment-id)
         (unique-result find-progress-by-assignment-id query-params))
@@ -56,7 +56,7 @@
                                          {:row-fn unwrap-arrays
                                           :connection tx})]
     (if-not question-progress
-      (let [question-progress-id (insert-question-progress! query-params)]
+      (let [question-progress-id (insert-question-progress<! query-params)]
         ;; Create new progress.
         (log/debug "Created question progress for question" question-id
                    "for user" (:email user))
