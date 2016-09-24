@@ -99,6 +99,7 @@ CREATE TABLE public.assignment_progress (
     user_id int4 NOT NULL,
     assignment_id int4 NOT NULL,
     started_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+    completed_at timestamptz,
     UNIQUE("user_id", "assignment_id"),
     PRIMARY KEY("id")
 );

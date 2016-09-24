@@ -190,5 +190,13 @@
           (if next-task
             ;; Move on to next page.
             (resp/found (str "/user/progress/" assignment-id  "/" next-task-ord))
-            ;; All done, move on to home page.
-            (resp/found (str "/user"))))))))
+            (do
+              ;; Update completed timestamp.
+              (db/update-completed-progress! {:id (:id assignment-progress)}
+                                             {:connection tx})
+              (log/debug "User" (:email user)
+                         "completed assignment" assignment-id
+                         "(progress" (:id assignment-progress) ")!")
+              ;; All done, move on to home page.
+              ;; TODO clean progress from session
+              (resp/found (str "/user")))))))))
