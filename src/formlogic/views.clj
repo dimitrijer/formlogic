@@ -231,16 +231,37 @@
            [:a {:href (str "/user/progress/" assignment-id) :class "list-group-item"}
             assignment-name])]])]))
 
+(defn- calculate-perc-completed
+  [assignment-progress-id assignment-id]
+  (let [questions-completed (:count)
+        (db/unique-result db/get-questions-completed-for-progress
+                          {:id (:id assignment-progress)})
+        total-questions (:count
+                          (db/unique-result db/get-number-of-questions-for-assignment
+                                            {:id assignment-id}))]
+    (int (* 100 (/ questions-completed (double total-questions))))))
+
 (defn task-page
   [user assignment-progress {:keys [task questions]}]
   (let [only-questions? (nil? (:contents task))
         first-task? (= 1 (:ord task))
-        assignment-id (get-in assignment-progress [:assignment :id])]
+        assignment-id (get-in assignment-progress [:assignment :id])
+        perc-complete (calculate-perc-completed (:id assignment-progress))]
+    (log/spy questions-completed)
+    (log/spy total-questions)
+    (log/spy perc-complete)
     (page-template
       "Pitanja"
       (navbar (:email user))
       [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
       [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
+      [:div {:class "progress" :style "width: 30%;"}
+       [:div {:class "progress-bar"
+              :role "progressbar"
+              :aria-valuemin "0"
+              :aria-valuemax "100"
+              :aria-valuenow perc-complete}
+        (str perc-complete "%")]]
       [:div {:class "row"}
        (when-not only-questions?
          (panel-column "panel-default"

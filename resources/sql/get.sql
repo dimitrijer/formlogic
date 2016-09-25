@@ -39,3 +39,16 @@ ORDER BY ord;
 
 -- name: find-next-task-id
 SELECT * FROM static.task WHERE assignment_id = :assignment_id AND ord = :ord + 1;
+
+-- name: get-questions-completed-for-progress
+SELECT count(*)
+FROM assignment_progress ap
+INNER JOIN question_progress qp on ap.id = qp.assignment_progress_id
+WHERE qp.answers != '{""}' AND ap.id = :id;
+
+-- name: get-number-of-questions-for-assignment
+SELECT count(*)
+FROM static.assignment a
+INNER JOIN static.task t ON a.id = t.assignment_id
+INNER JOIN static.question q ON t.id = q.task_id
+WHERE a.id = :id;
