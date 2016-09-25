@@ -23,9 +23,6 @@ WHERE assignment_progress_id = :assignment_progress_id AND question_id = :questi
 -- name: find-task-by-assignment-id
 SELECT * FROM static.task WHERE assignment_id = :assignment_id AND ord = :ord;
 
--- name: get-number-of-tasks-for-assignment
-SELECT count(*) FROM static.task WHERE assignment_id = :id;
-
 -- name: find-questions-by-task-id
 SELECT * FROM static.question WHERE task_id = :task_id ORDER BY ord;
 
@@ -49,3 +46,6 @@ FROM static.assignment a
 INNER JOIN static.task t ON a.id = t.assignment_id
 INNER JOIN static.question q ON t.id = q.task_id
 WHERE a.id = :id;
+
+-- name: get-number-of-tasks-for-assignment
+SELECT count(*) FROM static.task WHERE assignment_id = :id;

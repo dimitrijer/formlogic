@@ -8,7 +8,7 @@
         [hiccup.form]
         [ring.util.anti-forgery]))
 
-(defn page-template
+(defn- page-template
   "Returns HTML page with provided title and contents."
   [title & contents]
   (html5 {:lang "rs" :ng-app "myApp"}
@@ -25,20 +25,20 @@
           (include-css "/css/bootstrap.min.css")
           [:body [:div {:class "container"} contents]]]))
 
-(defn button-link
+(defn- button-link
   ([uri btn-label] (button-link uri btn-label "btn btn-primary"))
   ([uri btn-label btn-class]
    (elem/link-to {:class btn-class} uri btn-label)))
 
-(defn well
+(defn- well
   [& contents]
   [:div {:class "im-centered well"} contents])
 
-(defn wide-well
+(defn- wide-well
   [& contents]
   [:div {:class "im-centered-wide well"} contents])
 
-(defn ng-alert
+(defn- ng-alert
   [alert-class div-args span-args & contents]
   [:div (into {:class (str "alert " alert-class) :role "alert"} div-args)
    [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
@@ -159,19 +159,18 @@
       [:p "Na Vašu email adresu " [:strong (h email)] " će kroz nekoliko minuta stići lozinka."]
       (button-link "/" "Početna stranica" "btn btn-primary"))))
 
-(defn navbar
+(defn- navbar
   [email]
   [:nav {:class "navbar navbar-inverse"}
    [:div {:class "container-fluid"}
     [:div {:class "navbar-header"} [:a {:class "navbar-brand" :href "/"} "Formlogic"]]
     [:ul {:class "nav navbar-nav"}
-     [:li (elem/link-to "/" "Home")]
-     [:li (elem/link-to "/" "Else")]]
+     [:li (elem/link-to "/" "Početna")]]
     [:ul {:class "nav navbar-nav navbar-right"}
      [:li [:p {:class "navbar-text"} [:span {:class "glyphicon glyphicon-user"}] " " email]]
      [:li (elem/link-to "/user/logout" [:span {:class "glyphicon glyphicon-log-out"}] " Odjava")]]]])
 
-(defn panel-column
+(defn- panel-column
   [panel-class div-args title & contents]
   [:div div-args
    [:div {:class (str "panel " panel-class)}
@@ -183,7 +182,7 @@
   (label {:class "control-label" :for (str "question-" id)} "question"
          (str ord ". " body)))
 
-(defn multiple-choice-question
+(defn- multiple-choice-question
   [question progress]
   (let [radio? (= (:type question) "single")
         elem-class (if radio? "radio" "checkbox")
@@ -199,7 +198,7 @@
      [:div {:class elem-class}
       [:label (elem-factory (elem-id idx) (active? text) (h text)) (h text)]])]))
 
-(defn fill-question
+(defn- fill-question
   [{id :id :as question} progress]
   [:div {:class "form-group"}
    (question-label question)
@@ -207,30 +206,11 @@
               (str "question" id "-fill")
               (first (:answers progress)))])
 
-(defn render-question
+(defn- render-question
   [{:keys [question progress]}]
   (case (:type question)
     ("single" "multiple") (multiple-choice-question question progress)
     "fill" (fill-question question progress)))
-
-(defn user-page
-  [user]
-  (page-template
-    "Zadaci"
-    (navbar (:email user))
-    [:h1 "Zadaci"]
-    [:div {:class "panel-group"}
-     (for [category (db/load-assignment-categories)
-           :let [category-name (:category category)
-                 cnt (:cnt category)]]
-       [:div {:class "panel panel-default"}
-        [:div {:class "panel-heading"}
-         [:h4 {:class "panel-title" } (h category-name) [:span {:class "pull-right badge"} cnt]]]
-        [:div {:class "list-group"}
-         (for [{assignment-id :id
-                assignment-name :name} (db/load-assignments-by-category {:category category-name})]
-           [:a {:href (str "/user/progress/" assignment-id) :class "list-group-item"}
-            assignment-name])]])]))
 
 (defn- calculate-perc-completed
   [assignment-progress-id assignment-id]
@@ -241,6 +221,68 @@
                           (db/unique-result db/get-number-of-questions-for-assignment
                                             {:id assignment-id}))]
     (int (* 100 (/ questions-completed (double total-questions))))))
+
+(defn- render-assignment
+  [user assignment]
+  (let [assignment-id (:id assignment)
+        tasks (:count (db/unique-result db/get-number-of-tasks-for-assignment
+                                        {:id assignment-id}))
+        questions (:count (db/unique-result db/get-number-of-questions-for-assignment
+                                            {:id assignment-id}))
+        assignment-progress (db/unique-result db/find-progress-by-assignment-id
+                                              {:assignment_id assignment-id
+                                               :user_id (:id user)})
+        in-progress? (not (nil? assignment-progress))
+        completed? (and in-progress? (:completed_at assignment-progress))
+        perc-completed (if in-progress?
+                         (calculate-perc-completed (:id assignment-progress) assignment-id)
+                         0)]
+    [:tr
+     (if completed?
+       {:class "success"}
+       (when in-progress?
+         {:class "warning"}))
+     [:td (:name assignment)]
+     [:td tasks]
+     [:td questions]
+     [:td (if in-progress?
+            (:started_at assignment-progress)
+            "Nije započet")]
+     [:td [:uib-progressbar {:type "default"
+                             :animate "false"
+                             :value perc-completed}
+           (when in-progress? (str perc-completed "%"))]]
+     [:td (if (or (not in-progress?) (not completed?))
+            (button-link (str "/user/progress/" (:id assignment))
+                         "Polaži"
+                         "btn btn-default")
+            [:em "Položen"])]]))
+
+(defn assignments-page
+  [user]
+  (page-template
+    "Zadaci"
+    (navbar (:email user))
+    [:h1 "Zadaci"]
+    [:div {:class "panel-group"}
+     (for [category (db/load-assignment-categories)
+           :let [category-name (:category category)
+                 cnt (:cnt category)]]
+       [:div {:class "panel panel-primary"}
+        [:div {:class "panel-heading"}
+         [:h4 {:class "panel-title" }
+          (h category-name) [:span {:class "pull-right badge"} cnt]]]
+        [:table  {:class "table table-hover"}
+         [:thead [:tr
+                  [:th "Ime"]
+                  [:th "Stranica"]
+                  [:th "Pitanja"]
+                  [:th "Započet"]
+                  [:th "Progres"]
+                  [:th "Ocena"]]]
+         [:tbody
+          (for [assignment (db/load-assignments-by-category {:category category-name})]
+            (render-assignment user assignment))]]])]))
 
 (defn- modal-template-ok
   [id title ok-label cancel-label & contents]

@@ -11,7 +11,7 @@
 
 (defroutes user-routes
   (context "/user" {{user :user :as session} :session :as req}
-    (GET "/" [] (views/user-page user))
+    (GET "/" [] (views/assignments-page user))
     (GET "/logout" [] (controllers/logout session))
     (GET "/progress/:assignment-id" [assignment-id] (controllers/attach-progress
                                                       session
