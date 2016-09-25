@@ -1,4 +1,4 @@
-var myApp = angular.module('myApp', ['ngSanitize']);
+var myApp = angular.module('myApp', ['ui.bootstrap', 'ngSanitize']);
 myApp.controller('LoginFormController', ['$scope', '$http', '$window',
 	function($scope, $http, $window) {
 		$scope.user = {};
