@@ -22,11 +22,12 @@
              (-> (resp/forbidden views/forbidden-page)
                  (resp/content-type "text/html")
                  (resp/charset "utf-8"))))
-    (POST "/progress/:assignment-id/:task" [assignment-id task]
+    (POST "/progress/:assignment-id/:task" [assignment-id task continue]
           (or (controllers/save-task session
                                      assignment-id
                                      (Integer/parseInt task)
-                                     (:form-params req))
+                                     (:form-params req)
+                                     (Boolean/parseBoolean continue))
               (-> (resp/forbidden views/forbidden-page)
                   (resp/content-type "text/html")
                   (resp/charset "utf-8"))))))

@@ -242,23 +242,44 @@
                                             {:id assignment-id}))]
     (int (* 100 (/ questions-completed (double total-questions))))))
 
+(defn- modal-template-ok
+  [id title ok-label cancel-label & contents]
+  [:script {:type "text/ng-template"
+            :id id}
+   [:div {:class "modal-header"}
+    [:h3 {:class "modal-title" :id "modal-title"} title]]
+   [:div {:class "modal-body" :id "modal-body"} contents]
+   [:div {:class "modal-footer"}
+    [:button {:class "btn btn-danger"
+              :type "button"
+              :ng-click "$ctrl.ok()"} ok-label]
+    [:button {:class "btn btn-default"
+              :type "button"
+              :ng-click "$ctrl.cancel()"} cancel-label]]])
+
 (defn task-page
   [user assignment-progress {:keys [task questions]}]
+  {:pre [task]}
   (let [only-questions? (nil? (:contents task))
         first-task? (= 1 (:ord task))
         assignment-id (get-in assignment-progress [:assignment :id])
         total-tasks (:count (db/unique-result db/get-number-of-tasks-for-assignment
                                               {:id assignment-id}))
+        last-task? (= total-tasks (:ord task))
         perc-complete (calculate-perc-completed (:id assignment-progress)
                                                 assignment-id)]
     (page-template
       "Pitanja"
+      (include-js "/js/task.js")
       (navbar (:email user))
       [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
       [:h3 {:class "text-center"} (str "Stranica " (:ord task) " od " total-tasks)]
       [:div {:class "row"}
        [:div {:class "col-lg-offset-4 col-lg-4"}
-        [:uib-progressbar {:type "success" :animate "false" :value perc-complete} (str perc-complete "%")]]]
+        [:uib-progressbar {:id "progress"
+                           :type "success"
+                           :animate "false"
+                           :value perc-complete} (str perc-complete "%")]]]
       [:div {:class "row"}
        (when-not only-questions?
          (panel-column "panel-default"
@@ -270,27 +291,39 @@
                      {:class (str (when only-questions? "col-lg-offset-3 ")
                                   "col-lg-6")}
                      "Pitanja"
-                     [:form {:name "taskForm"
+                     [:form {:id "taskForm"
+                             :name "taskForm"
                              :novalidate ""
                              :role "form"
                              :method "post"
-                             :action (str "/user/progress/"
-                                          assignment-id
-                                          "/"
-                                          (:ord task))}
+                             :ng-controller "TaskFormController as $ctrl"
+                             :data-action-uri (str "/user/progress/"
+                                                   assignment-id
+                                                   "/"
+                                                   (:ord task))
+                             :action "#"}
+                      (when last-task?
+                        (modal-template-ok "ok-modal.html"
+                                           "Potvrdite predaju"
+                                           "Predaj"
+                                           "Nazad"
+                                           [:p "Da li ste " [:strong "sigurni"] " da želite da predate test? Ova akcija se ne može poništiti."]))
                       (anti-forgery-field)
                       (for [question questions]
                         (render-question question))
                       [:div {:class "row"}
                        (when-not first-task?
-                         (button-link (str "/user/progress/"
-                                           assignment-id
-                                           "/"
-                                           (dec (:ord task)))
-                                      "Nazad"
-                                      "col-lg-offset-2 col-lg-3 btn btn-default"))
+                         [:button {:class "col-lg-offset-2 col-lg-3 btn btn-default"
+                                   :type "button"
+                                   :ng-click "onSubmitPrev()"}
+                          "Nazad"])
                        [:button {:class (str (if first-task?
-                                               "col-lg-offset-7"
-                                               "col-lg-offset-2")
-                                             " col-lg-3 btn btn-primary")
-                                 :type "submit"} (h "Sačuvaj & Dalje")]]])])))
+                                               "col-lg-offset-7 "
+                                               "col-lg-offset-2 ")
+                                             (if last-task?
+                                               "btn-danger "
+                                               "btn-primary ")
+                                             "col-lg-3 btn")
+                                 :type "button"
+                                 :ng-click (if last-task? "openOkModal()" "onSubmitNext()")}
+                        (if last-task?  "Predaj" "Dalje")]]])])))

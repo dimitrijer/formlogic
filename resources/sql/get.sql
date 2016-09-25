@@ -37,7 +37,7 @@ WHERE assignment_progress_id = :assignment_progress_id
       AND question_id IN (SELECT id FROM static.question WHERE task_id = :task_id)
 ORDER BY ord;
 
--- name: get-questions-completed-for-progress
+-- name: get-number-of-questions-completed-for-progress
 SELECT count(*)
 FROM assignment_progress ap
 INNER JOIN question_progress qp on ap.id = qp.assignment_progress_id

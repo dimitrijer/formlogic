@@ -167,7 +167,7 @@
                  (:email user) "with answers:" answers))))
 
 (defn save-task
-  [session assignment-id task-ord answers]
+  [session assignment-id task-ord answers continue?]
   (if-let [assignment-progress (get-in session [:progress assignment-id])]
     ;; Fetch task, questions and question progress for this page from DB.
     (jdbc/with-db-transaction [tx db/db-spec]
@@ -182,21 +182,26 @@
                     questions))
         (let [user (:user session)
               next-task-ord (inc task-ord)
+              prev-task-ord (dec task-ord)
               assignment-id (get-in assignment-progress [:assignment :id])
               next-task (db/unique-result db/find-task-by-assignment-id
                                           {:assignment_id assignment-id
                                            :ord next-task-ord}
                                           {:connection tx})]
-          (if next-task
-            ;; Move on to next page.
-            (resp/found (str "/user/progress/" assignment-id  "/" next-task-ord))
-            (do
-              ;; Update completed timestamp.
-              (db/update-completed-progress! {:id (:id assignment-progress)}
-                                             {:connection tx})
-              (log/debug "User" (:email user)
-                         "completed assignment" assignment-id
-                         "(progress" (:id assignment-progress) ")!")
-              ;; All done, move on to home page.
-              ;; TODO clean progress from session
-              (resp/found (str "/user")))))))))
+
+          (if continue?
+            (if next-task
+              ;; Move on to next page.
+              (resp/found (str "/user/progress/" assignment-id  "/" next-task-ord))
+              (do
+                ;; Update completed timestamp.
+                (db/update-completed-progress! {:id (:id assignment-progress)}
+                                               {:connection tx})
+                (log/debug "User" (:email user)
+                           "completed assignment" assignment-id
+                           "(progress" (:id assignment-progress) ")!")
+                ;; All done, move on to home page.
+                ;; TODO clean progress from session
+                (resp/found (str "/user"))))
+            ;; Go back to previous page.
+            (resp/found (str "/user/progress/" assignment-id  "/" prev-task-ord))))))))
