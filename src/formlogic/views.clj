@@ -234,9 +234,9 @@
 
 (defn- calculate-perc-completed
   [assignment-progress-id assignment-id]
-  (let [questions-completed (:count)
-        (db/unique-result db/get-questions-completed-for-progress
-                          {:id (:id assignment-progress)})
+  (let [questions-completed (:count
+                              (db/unique-result db/get-number-of-questions-completed-for-progress
+                                                {:id assignment-progress-id}))
         total-questions (:count
                           (db/unique-result db/get-number-of-questions-for-assignment
                                             {:id assignment-id}))]
@@ -247,22 +247,18 @@
   (let [only-questions? (nil? (:contents task))
         first-task? (= 1 (:ord task))
         assignment-id (get-in assignment-progress [:assignment :id])
-        perc-complete (calculate-perc-completed (:id assignment-progress))]
-    (log/spy questions-completed)
-    (log/spy total-questions)
-    (log/spy perc-complete)
+        total-tasks (:count (db/unique-result db/get-number-of-tasks-for-assignment
+                                              {:id assignment-id}))
+        perc-complete (calculate-perc-completed (:id assignment-progress)
+                                                assignment-id)]
     (page-template
       "Pitanja"
       (navbar (:email user))
       [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
-      [:h3 {:class "text-center"} (str "Stranica " (:ord task))]
-      [:div {:class "progress" :style "width: 30%;"}
-       [:div {:class "progress-bar"
-              :role "progressbar"
-              :aria-valuemin "0"
-              :aria-valuemax "100"
-              :aria-valuenow perc-complete}
-        (str perc-complete "%")]]
+      [:h3 {:class "text-center"} (str "Stranica " (:ord task) " od " total-tasks)]
+      [:div {:class "row"}
+       [:div {:class "col-lg-offset-4 col-lg-4"}
+        [:uib-progressbar {:type "success" :animate "false" :value perc-complete} (str perc-complete "%")]]]
       [:div {:class "row"}
        (when-not only-questions?
          (panel-column "panel-default"
@@ -292,9 +288,9 @@
                                            "/"
                                            (dec (:ord task)))
                                       "Nazad"
-                                      "col-lg-offset-1 col-lg-3 btn btn-default"))
+                                      "col-lg-offset-2 col-lg-3 btn btn-default"))
                        [:button {:class (str (if first-task?
                                                "col-lg-offset-7"
-                                               "col-lg-offset-3")
+                                               "col-lg-offset-2")
                                              " col-lg-3 btn btn-primary")
                                  :type "submit"} (h "Sačuvaj & Dalje")]]])])))
