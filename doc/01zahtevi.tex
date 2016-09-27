@@ -43,6 +43,11 @@ Nakon što korisnik odgovori na sva pitanja sa testa, na poslednjoj stranici tre
 
 Ukoliko korisnik u bilo kom trenutku prekine polaganje testa, potrebno je omogućiti nastavljanje polaganja prilikom sledećeg logovanja korisnika. Naravno, treba restaurirati dotadašnji progres polaganja testa.
 
+\subsubsection{Administratorski interfejs}
+Za razliku od običnih korisnika, nakon što se administrator uloguje treba prikazati pregled ocenjenih testova studenata. Za svaki odrađeni test treba prikazati naziv testa, ime studenta, datum polaganja i uspešnost. Radi lakšeg prikazivanja rezultata, treba omogućiti sortiranje rezultata po svim kolonama, kao i filtriranje po email nalogu studenta.
+
+Administrator treba da ima mogućnost da pregleda svaku instancu završenog testa, tako što mu se prikaže isti interfejs kao za polaganje testa, ali bez mogućnosti menjanja odgovora.
+
 \subsection{Druga grupa zahteva}
 Druga grupa zahteva je vezana za oblast formalne logike, i odnosi se na unos, transformaciju i prikazivanje logičkih izraza.
 
@@ -88,18 +93,18 @@ $$ x \implies y \equiv \neg x \lor y $$
 \neg \exists x \, (P(x)) &\equiv \forall x \, (\neg P(x))
 \end{align*}
 \item Zamena egzistencijalnih kvantifikatora arbitrarnim funkcijama. čiji su argumenti sve promenljive vezane univerzalnim kvantifikatorom na tom mestu u formuli
-$$ \forall x \; \exists y \, (P(x, y)) \equiv \forall x \, (P(x, \Phi(y))) $$
+$$ \forall x \; \exists y \, (P(x, y)) \to \forall x \, (P(x, \Phi(y))) $$
 \item Preimenovanje varijabli tako da svakom kvantifikatoru odgovara unikatna promenljiva, na primer:
-$$ \forall x \, (P(x)) \land \forall x \, (Q(x)) \equiv
+$$ \forall x \, (P(x)) \land \forall x \, (Q(x)) \to
 \forall x \, (P(x)) \land \forall y \, (Q(y)) $$
 \item Premeštanje univerzalnih kvantifikatora na početak formule, bez promene redosleda, na prethodnom primeru:
-$$ \forall x\, (P(x)) \land \forall y \, (Q(y)) \equiv
+$$ \forall x\, (P(x)) \land \forall y \, (Q(y)) \to
 \forall x \; \forall y \, (P(x) \land Q(y)) $$
 \item Spuštanje disjunkcija do atomskog nivoa (osobina asocijativnosti)
 $$ (x \land y) \lor z \equiv (x \lor z) \land (y \lor z) $$
 \item Eliminacija konjukcija razdvajanjem operanada na posebne formule
 \begin{align*}
-\forall x \; \forall y \; \forall z \, ((x \lor y) \land (y \lor a) \land (z \lor a)) \equiv \; &\forall x \; \forall y \, (x \lor y) \\
+\forall x \; \forall y \; \forall z \, ((x \lor y) \land (y \lor a) \land (z \lor a)) \to \; &\forall x \; \forall y \, (x \lor y) \\
 &\forall y \, (y \lor a) \\
 &\forall z \, (z \lor a)
 \end{align*}
@@ -161,3 +166,5 @@ ORM je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajuć
 \subsection{Frontend tehnologije}
 
 \emph{AngularJS}\cite{angularjs} je korišćen kao \textit{de facto} standard za frontend JavaScript framework, u kombinaciji sa \emph{Bootstrap}\cite{bootstrap} CSS stilovima. Angular je uglavnom korišćen za validaciju obrazaca i POST zahteve ka serveru u pozadini, dok Bootstrap obezbeđuje podrazumevanu temu ugodnu za oko, ikonice, i fluidan \textit{layout} stranice koji automatski prilagođava stranicu tipu uređaja, bilo da je to desktop ili mobilni internet pregledač. HTML stranice su u skladu sa HTML5 standardom.
+
+Za prikazivanje logičkih jednačina koristi se JS biblioteka \emph{KaTeX}\footnote{\url{https://github.com/Khan/KaTeX}}, koja omogućava efikasno renderovanje jednačina u \LaTeX formatu.
