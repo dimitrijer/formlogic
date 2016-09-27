@@ -159,9 +159,20 @@
                               user
                               (:id assignment-progress)
                               (:id question)
-                              tx)]
+                              tx)
+          ;; Get correct answers by sampling choices with indices specified in
+          ;; (:answers question).
+          correct-answers (reduce #(conj %1 (nth (:choices question) %2))
+                                  #{}
+                                  (:answers question))
+          ;; Check if every given answer is contained in correct answers. Also,
+          ;; check if number of answers given matches question type (fill - 1,
+          ;; single - 1, multiple - size of answers).
+          correct? (and (every? #(contains? correct-answers %) answers)
+                        (= (count correct-answers) (count answers)))]
       (db/update-question-progress! {:id (:id question-progress)
-                                     :answers answers}
+                                     :answers answers
+                                     :correct correct?}
                                     {:connection tx})
       (log/debug "Updated question" (:id question) "progress for user"
                  (:email user) "with answers:" answers))))

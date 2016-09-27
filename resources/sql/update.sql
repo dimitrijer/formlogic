@@ -1,6 +1,6 @@
 -- name: update-question-progress! 
 UPDATE public.question_progress
-SET answers = ARRAY[ :answers ] WHERE id = :id;
+SET answers = ARRAY[ :answers ], correct = :correct WHERE id = :id;
 
 -- name: update-completed-progress!
 UPDATE public.assignment_progress

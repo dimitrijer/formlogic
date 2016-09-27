@@ -124,6 +124,7 @@ CREATE TABLE public.question_progress (
     assignment_progress_id int4 NOT NULL,
     question_id int4 NOT NULL,
     answers text[] NOT NULL,
+    correct bool NOT NULL DEFAULT False,
     PRIMARY KEY("id")
 );
 -- TODO add constraint check
