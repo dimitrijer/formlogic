@@ -44,6 +44,8 @@
    [:span {:class "col-lg-1 glyphicon glyphicon-alert" :aria-hidden "true"}]
    [:span (into {:class "col-lg-11"} span-args) contents]])
 
+(def ^{:private true} date-format (java.text.SimpleDateFormat. "HH:mm:ss dd/MM/YYYY"))
+
 (def not-found-page
   (page-template
     "404 - Stranica ne postoji"
@@ -215,12 +217,18 @@
 (defn- calculate-perc-completed
   [assignment-progress-id assignment-id]
   (let [questions-completed (:count
-                              (db/unique-result db/get-number-of-questions-completed-for-progress
-                                                {:id assignment-progress-id}))
+                              (db/unique-result
+                                db/get-number-of-questions-completed-for-progress
+                                {:id assignment-progress-id}))
         total-questions (:count
-                          (db/unique-result db/get-number-of-questions-for-assignment
-                                            {:id assignment-id}))]
-    (int (* 100 (/ questions-completed (double total-questions))))))
+                          (db/unique-result
+                            db/get-number-of-questions-for-assignment
+                            {:id assignment-id}))
+        correct-questions (:count (db/unique-result
+                                    db/get-number-of-correct-questions-for-progress
+                                    {:id assignment-progress-id}))]
+    {:progress (int (* 100 (/ questions-completed (double total-questions))))
+     :grade (int (* 100 (/ correct-questions (double total-questions))))}))
 
 (defn- render-assignment
   [user assignment]
@@ -234,9 +242,12 @@
                                                :user_id (:id user)})
         in-progress? (not (nil? assignment-progress))
         completed? (and in-progress? (:completed_at assignment-progress))
-        perc-completed (if in-progress?
-                         (calculate-perc-completed (:id assignment-progress) assignment-id)
-                         0)]
+        {:keys [progress grade]} (if in-progress?
+                                   (calculate-perc-completed
+                                     (:id assignment-progress)
+                                     assignment-id)
+                                   {:progress 0 :grade 0})
+        passed? (> grade 50)]
     [:tr
      (if completed?
        {:class "success"}
@@ -246,17 +257,21 @@
      [:td tasks]
      [:td questions]
      [:td (if in-progress?
-            (:started_at assignment-progress)
+            (.format date-format (:started_at assignment-progress))
             "Nije započet")]
-     [:td [:uib-progressbar {:type "default"
-                             :animate "false"
-                             :value perc-completed}
-           (when in-progress? (str perc-completed "%"))]]
-     [:td (if (or (not in-progress?) (not completed?))
+     [:td (if completed?
+            (str "Završen u " (.format date-format (:completed_at assignment-progress)))
+            [:uib-progressbar {:type "default"
+                               :animate "false"
+                               :value progress}
+             (when in-progress? (str progress "%"))])]
+     [:td (if-not completed?
             (button-link (str "/user/progress/" (:id assignment))
                          "Polaži"
                          "btn btn-default")
-            [:em "Položen"])]]))
+            [:strong
+             (when-not passed? {:style "color: #ff0000;"})
+             (str (if passed? "Položen" "Nije položen") " (" grade "%)")])]]))
 
 (defn assignments-page
   [user]

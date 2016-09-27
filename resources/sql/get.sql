@@ -40,6 +40,12 @@ FROM assignment_progress ap
 INNER JOIN question_progress qp on ap.id = qp.assignment_progress_id
 WHERE qp.answers != '{""}' AND ap.id = :id;
 
+-- name: get-number-of-correct-questions-for-progress
+SELECT count(*)
+FROM assignment_progress ap
+INNER JOIN question_progress qp on ap.id = qp.assignment_progress_id
+WHERE qp.correct AND ap.id = :id;
+
 -- name: get-number-of-questions-for-assignment
 SELECT count(*)
 FROM static.assignment a
