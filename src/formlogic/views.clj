@@ -322,8 +322,8 @@
         total-tasks (:count (db/unique-result db/get-number-of-tasks-for-assignment
                                               {:id assignment-id}))
         last-task? (= total-tasks (:ord task))
-        perc-complete (calculate-perc-completed (:id assignment-progress)
-                                                assignment-id)]
+        perc-complete (:progress (calculate-perc-completed (:id assignment-progress)
+                                                           assignment-id))]
     (page-template
       "Pitanja"
       (include-js "/js/task.js")
