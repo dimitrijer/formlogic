@@ -6,7 +6,8 @@ DBUSER=formlogic
 DIR=`dirname $0`
 SCRIPTS_DIR=${DIR}/../resources/sql
 SCRIPTS=(db_create.sql
-	 assignments.sql)
+	 assignments.sql
+	 admins.sql)
 
 set -xeu
 
