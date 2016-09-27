@@ -31,4 +31,13 @@ VALUES
 (3, 3, 'fill', 'Navesti ime jedne pesme Beatles-a.', '{"Yellow Submarine"}', '{0}'::int2[]);
 
 INSERT INTO static.assignment(id, name, category)
-VALUES (3, 'Svođenje na KNF', 'Ekspertski sistemi');
+VALUES (3, 'Opšta kultura 3 - Nauka', 'Opšte znanje');
+
+INSERT INTO static.assignment(id, name, category)
+VALUES (4, 'Formalna logika', 'Ekspertski sistemi');
+
+INSERT INTO static.assignment(id, name, category)
+VALUES (5, 'Svođenje na KNF', 'Ekspertski sistemi');
+
+INSERT INTO static.assignment(id, name, category)
+VALUES (6, 'Zaključivanje rezolucijom', 'Ekspertski sistemi');

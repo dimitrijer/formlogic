@@ -264,25 +264,24 @@
     "Zadaci"
     (navbar (:email user))
     [:h1 "Zadaci"]
-    [:div {:class "panel-group"}
+    [:uib-accordion
      (for [category (db/load-assignment-categories)
            :let [category-name (:category category)
                  cnt (:cnt category)]]
-       [:div {:class "panel panel-primary"}
-        [:div {:class "panel-heading"}
-         [:h4 {:class "panel-title" }
-          (h category-name) [:span {:class "pull-right badge"} cnt]]]
+       [:div {:class "panel-primary" :uib-accordion-group ""}
+        [:uib-accordion-heading
+           (h category-name) [:span {:class "pull-right badge"} cnt]]
         [:table  {:class "table table-hover"}
-         [:thead [:tr
-                  [:th "Ime"]
-                  [:th "Stranica"]
-                  [:th "Pitanja"]
-                  [:th "Započet"]
-                  [:th "Progres"]
-                  [:th "Ocena"]]]
-         [:tbody
-          (for [assignment (db/load-assignments-by-category {:category category-name})]
-            (render-assignment user assignment))]]])]))
+          [:thead [:tr
+                   [:th "Ime"]
+                   [:th "Stranica"]
+                   [:th "Pitanja"]
+                   [:th "Započet"]
+                   [:th "Progres"]
+                   [:th "Ocena"]]]
+          [:tbody
+           (for [assignment (db/load-assignments-by-category {:category category-name})]
+             (render-assignment user assignment))]]])]))
 
 (defn- modal-template-ok
   [id title ok-label cancel-label & contents]
