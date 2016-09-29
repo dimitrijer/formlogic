@@ -4,6 +4,7 @@
            [clojure.tools.logging :as log]
            [clojure.string :as str]
            [clojure.java.jdbc :as jdbc]
+           [cheshire.core :as json]
            [formlogic.config :refer [cget]]
            [formlogic.parser :refer [char-range]]
            [formlogic.views :as views]
@@ -216,3 +217,33 @@
                 (resp/found (str "/user"))))
             ;; Go back to previous page.
             (resp/found (str "/user/progress/" assignment-id  "/" prev-task-ord))))))))
+
+(defn search-students
+  [user email]
+  (if (:admin user)
+    (json/generate-string {:results (apply vector (db/get-students-like {:email email}))})
+    (resp/forbidden)))
+
+(defn search-assignments
+  [user assignment-name]
+  (if (:admin user)
+    (json/generate-string {:results (apply vector (db/get-assignments-like {:name assignment-name}))})
+    (resp/forbidden)))
+
+(defn get-progresses-for-student
+  [user student-id]
+  (if (:admin user)
+    (json/generate-string {:results (apply vector
+                                           (db/find-completed-progresses-for-user
+                                             {:id (Integer/parseInt student-id)}))}
+                          {:date-format "HH:mm:ss dd/MM/yyyy"})
+   (resp/forbidden)))
+
+(defn get-progresses-for-assignment
+  [user assignment-id]
+  (if (:admin user)
+    (json/generate-string {:results (apply vector
+                                           (db/find-completed-progresses-for-assignment
+                                             {:id (Integer/parseInt assignment-id)}))}
+                          {:date-format "HH:mm:ss dd/MM/yyyy"})
+   (resp/forbidden)))

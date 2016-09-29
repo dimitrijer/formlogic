@@ -11,7 +11,9 @@
 
 (defroutes user-routes
   (context "/user" {{user :user :as session} :session :as req}
-    (GET "/" [] (views/assignments-page user))
+    (GET "/" [] (if (:admin user)
+                  (views/administrator-page user)
+                  (views/assignments-page user)))
     (GET "/logout" [] (controllers/logout session))
     (GET "/progress/:assignment-id" [assignment-id] (controllers/attach-progress
                                                       session
@@ -30,7 +32,14 @@
                                      (Boolean/parseBoolean continue))
               (-> (resp/forbidden views/forbidden-page)
                   (resp/content-type "text/html")
-                  (resp/charset "utf-8"))))))
+                  (resp/charset "utf-8"))))
+    ;; The following are supposed to be invoked by admins only.
+    (GET "/students" [email] (controllers/search-students user email))
+    (GET "/assignments" [assignment_name] (controllers/search-assignments user assignment_name))
+    (GET "/students/progresses" [id] (controllers/get-progresses-for-student user id))
+    (GET "/assignments/progresses" [id] (controllers/get-progresses-for-assignment user id))
+    (GET "/progresses/:progress-id/:task" [progress-id task]
+         (controllers/render-task session (Integer/parseInt task)))))
 
 (defroutes site-routes
   (GET "/" {session :session} (if (contains? session :user)

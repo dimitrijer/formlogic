@@ -286,7 +286,7 @@
        [:div {:class "panel-primary" :uib-accordion-group ""}
         [:uib-accordion-heading
            (h category-name) [:span {:class "pull-right badge"} cnt]]
-        [:table  {:class "table table-hover"}
+        [:table {:class "table table-hover"}
           [:thead [:tr
                    [:th "Ime"]
                    [:th "Stranica"]
@@ -337,12 +337,14 @@
                            :animate "false"
                            :value perc-complete} (str perc-complete "%")]]]
       [:div {:class "row"}
+       ;; Demonstrations panel.
        (when-not only-questions?
          (panel-column "panel-default"
                        {:class "col-lg-6"}
                        "Demonstracija"
                        ;; Eval magic right here.
                        (eval (read-string (:contents task)))))
+       ;; Questions panel.
        (panel-column "panel-primary"
                      {:class (str (when only-questions? "col-lg-offset-3 ")
                                   "col-lg-6")}
@@ -383,3 +385,85 @@
                                  :type "button"
                                  :ng-click (if last-task? "openOkModal()" "onSubmitNext()")}
                         (if last-task?  "Predaj" "Dalje")]]])])))
+
+(defn- student-progress-tab
+  []
+  [:div {:class "tab-group"}
+   [:div {:class "form-group"}
+    [:input {:type "text"
+             :ng-model "student"
+             :placeholder "Email studenta"
+             :ng-model-options "{ debounce: 250 }"
+             :uib-typeahead "student as student.email for student in getStudents($viewValue)"
+             :typeahead-loading "loadingStudents"
+             :typeahead-on-select "onStudentSelected($item)"
+             :typeahead-no-results "noStudent"
+             :class "form-control"}
+     [:i {:ng-show "loadingStudents" :class "glyphicon glyphicon-refresh"}]
+     [:div {:ng-show "noStudent"}
+      [:i {:class "glyphicon glyphicon-remove"}] "Ne postoji takav nalog"]]]
+   [:div {:ng-show "studentProgresses.length == 0"} [:strong "Student nema završenih testova."]]
+   [:table {:ng-show "studentProgresses.length > 0"
+            :class "table table-hover"}
+    [:thead
+     [:th "Test"]
+     [:th "Započet"]
+     [:th "Završen"]
+     [:th "Ocena"]
+     [:th "Link"]]
+    [:tbody
+     [:tr {:ng-repeat "progress in studentProgresses"}
+      [:td "{{ progress.name }}"]
+      [:td "{{ progress.started_at }}"]
+      [:td "{{ progress.completed_at }}"]
+      [:td [:strong {:ng-class "{ red: progress.grade < 51 }"} "{{ progress.grade }}%"]]
+      [:td [:a {:href "/progresses/{{ progress.id }}/1"}
+            [:button {:class "btn btn-primary"
+                      :type "button"} "Pregledaj"]]]]]]])
+
+(defn- assignment-progress-tab
+  []
+  [:div {:class "tab-group"}
+   [:div {:class "form-group"}
+    [:input {:type "text"
+             :ng-model "assignment"
+             :placeholder "Ime testa"
+             :ng-model-options "{ debounce: 250 }"
+             :uib-typeahead "test as test.name for test in getTests($viewValue)"
+             :typeahead-loading "loadingTests"
+             :typeahead-on-select "onTestSelected($item)"
+             :typeahead-no-results "noTests"
+             :class "form-control"}
+     [:i {:ng-show "loadingTests" :class "glyphicon glyphicon-refresh"}]
+     [:div {:ng-show "noTests"}
+      [:i {:class "glyphicon glyphicon-remove"}] "Ne postoji test sa tim imenom"]]]
+   [:div {:ng-show "assignmentProgresses.length == 0"} [:strong "Ne postoje završene instance testa."]]
+   [:table {:ng-show "assignmentProgresses.length > 0"
+            :class "table table-hover"}
+    [:thead
+     [:th "Student"]
+     [:th "Započet"]
+     [:th "Završen"]
+     [:th "Ocena"]
+     [:th "Link"]]
+    [:tbody
+     [:tr {:ng-repeat "progress in assignmentProgresses"}
+      [:td "{{ progress.email }}"]
+      [:td "{{ progress.started_at }}"]
+      [:td "{{ progress.completed_at }}"]
+      [:td [:strong {:ng-class "{ red: progress.grade < 51 }"} "{{ progress.grade }}%"]]
+      [:td [:a {:href "/progresses/{{ progress.id }}/1"}
+            [:button {:class "btn btn-primary"
+                      :type "button"} "Pregledaj"]]]]]]])
+
+(defn administrator-page
+  [user]
+  (page-template
+    "Početna"
+    (include-js "/js/admin.js")
+    (navbar (:email user))
+    [:h1 "Pregled testova"]
+    [:div {:ng-controller "TypeaheadCtrl"}
+     [:uib-tabset
+      [:uib-tab {:index "0" :heading "Po studentima"} (student-progress-tab)]
+      [:uib-tab {:index "1" :heading "Po testovima"} (assignment-progress-tab)]]]))

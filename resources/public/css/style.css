@@ -13,3 +13,11 @@
 	max-width: 750px;
 } 
 
+.tab-group {
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+
+.red {
+	color: #ff0000;
+}

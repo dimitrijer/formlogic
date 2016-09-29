@@ -55,3 +55,41 @@ WHERE a.id = :id;
 
 -- name: get-number-of-tasks-for-assignment
 SELECT count(*) FROM static.task WHERE assignment_id = :id;
+
+-- name: get-students-like
+SELECT id, email FROM public.user WHERE NOT admin AND email ILIKE '%' || :email || '%';
+
+-- name: get-assignments-like
+SELECT id, name FROM static.assignment WHERE name ILIKE '%' || :name || '%';
+
+-- name: find-completed-progresses-for-user
+WITH
+progress AS (SELECT * FROM assignment_progress ap
+             WHERE ap.user_id = :id AND completed_at IS NOT NULL),
+questions AS (SELECT p.id, correct, count(*) AS cnt FROM question_progress qp
+              INNER JOIN progress p ON qp.assignment_progress_id = p.id
+              GROUP BY p.id, qp.correct),
+total_questions AS (SELECT id, sum(cnt) AS total FROM questions GROUP BY id)
+SELECT p.id, p.started_at, p.completed_at, a.name, (100 * cnt::real / total::real)::int AS grade
+FROM progress p
+INNER JOIN static.assignment a ON p.assignment_id = a.id
+INNER JOIN questions q ON p.id = q.id
+INNER JOIN total_questions tq ON p.id = tq.id
+WHERE q.correct
+ORDER BY p.completed_at DESC;
+
+-- name: find-completed-progresses-for-assignment
+WITH
+progress AS (SELECT * FROM assignment_progress ap
+             WHERE ap.assignment_id = :id AND completed_at IS NOT NULL),
+questions AS (SELECT p.id, correct, count(*) AS cnt FROM question_progress qp
+              INNER JOIN progress p ON qp.assignment_progress_id = p.id
+              GROUP BY p.id, qp.correct),
+total_questions AS (SELECT id, sum(cnt) AS total FROM questions GROUP BY id)
+SELECT p.id, p.started_at, p.completed_at, u.email, (100 * cnt::real / total::real)::int AS grade
+FROM progress p
+INNER JOIN public.user u ON p.user_id = u.id
+INNER JOIN questions q ON p.id = q.id
+INNER JOIN total_questions tq ON p.id = tq.id
+WHERE q.correct
+ORDER BY p.completed_at DESC;

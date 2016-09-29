@@ -28,8 +28,13 @@
                  ;; DB stuff.
                  [yesql "0.5.3"]
                  [org.postgresql/postgresql "9.4-1201-jdbc41"]
+                 ;; Logic equation parsing.
                  [instaparse "1.4.3"]
-                 [org.clojure/math.combinatorics "0.1.3"]]
+                 ;; Various stuff.
+                 [org.clojure/math.combinatorics "0.1.3"]
+                 ;; JSON library.
+                 [cheshire "5.6.3"]
+                 ]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]

@@ -1,7 +1,7 @@
 -- User table.
 CREATE TABLE public.user (
     id SERIAL NOT NULL,
-    email text NOT NULL,
+    email text NOT NULL UNIQUE,
     password text NOT NULL,
     admin boolean NOT NULL DEFAULT false,
     PRIMARY KEY("id")
@@ -20,7 +20,7 @@ CREATE SCHEMA static;
 -- Assignments are top-level entities.
 CREATE TABLE static.assignment (
     id int4 NOT NULL,
-    name text NOT NULL,
+    name text NOT NULL UNIQUE,
     category text NOT NULL,
     PRIMARY KEY("id")
 );
