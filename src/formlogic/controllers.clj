@@ -76,18 +76,38 @@
       (log/error "Tried to log out, but user is not logged in yet!")
       (views/login-page))))
 
-(defn attach-progress
-  [session user assignment-id]
-  (let [assignment-progress (db/get-or-create-progress user assignment-id)
-        assignment (db/unique-result
-                     db/find-assignment-by-id
-                     {:id (Integer/parseInt assignment-id)})
+(defn- attach-progress-to-session
+  [session assignment-progress]
+  (let [assignment-id (:assignment_id assignment-progress)
+        assignment (db/unique-result db/find-assignment-by-id
+                                     {:id assignment-id})
+        ;; Note that this may not be the user from session, in admin case.
+        user (db/unique-result db/find-user-by-id
+                               {:id (:user_id assignment-progress)})
         session (-> session
                     (assoc-in [:progress assignment-id] assignment-progress)
-                    (assoc-in [:progress assignment-id :assignment] assignment))]
-    ;; Attach progress to progress map, within session. Always start from first task.
-    (-> (resp/found (str "/user/progress/" assignment-id "/" 1))
-        (assoc :session session))))
+                    (assoc-in [:progress assignment-id :assignment] assignment)
+                    (assoc-in [:progress assignment-id :user] user))]
+  ;; Attach progress to progress map, within session. Always start from first task.
+  (log/debug (:email (:user session)) "attached progress ID" (:id assignment-progress)
+             "from user" (:emal user))
+  (-> (resp/found (str "/user/progress/" assignment-id "/" 1))
+      (assoc :session session))))
+
+(defn attach-progress
+  ([session progress-id]
+  "First form can only be invoked by admin and is used to attach some student's
+  progress to admin's session. Second form is invoked by student sessions."
+  {:pre [(:admin (:user session))]}
+  (if-let [assignment-progress (db/unique-result db/find-progress-by-id
+                                                 {:id progress-id})]
+    (attach-progress-to-session session assignment-progress)
+    (do
+      (log/warn (:email (:user session)) "tried to attach non-existing progress to admin session!")
+      (-> (resp/not-found views/not-found-page)))))
+  ([session user assignment-id]
+  (let [assignment-progress (db/get-or-create-progress user assignment-id)]
+    (attach-progress-to-session session assignment-progress))))
 
 (defn- collect-questions
   [assignment-progress task-ord tx]
@@ -178,20 +198,43 @@
       (log/debug "Updated question" (:id question) "progress for user"
                  (:email user) "with answers:" answers))))
 
+(defn- update-question-grading
+  [assignment-progress question correct? tx]
+  (when-not (nil? correct?)
+    (db/update-question-progress-grading! {:question_id (:id question)
+                                           :assignment_progress_id (:id assignment-progress)
+                                           :correct (Boolean/parseBoolean correct?)}
+                                          {:connection tx})
+    (log/debug "Updated progress ID" (:id assignment-progress)
+               "question" (:id question) "correctness to" correct?)))
+
+(defn- extract-correct [question answers]
+  (get answers (str "question" (:id question) "correct")))
+
+(defn- update-task-progress [session assignment-progress questions answers tx]
+  (if (:admin (:user session))
+    ;; Update correct fields for questions.
+    (doall (map #(update-question-grading assignment-progress
+                                          %
+                                          (extract-correct % answers)
+                                          tx)
+                questions))
+    ;; Update question progress with answers.
+    (do
+      (doall (map #(update-question-progress
+                     (:user session)
+                     assignment-progress
+                     %
+                     (extract-answers % answers)
+                     tx)
+                  questions)))))
 (defn save-task
   [session assignment-id task-ord answers continue?]
-  (if-let [assignment-progress (get-in session [:progress assignment-id])]
-    ;; Fetch task, questions and question progress for this page from DB.
+  (when-let [assignment-progress (get-in session [:progress assignment-id])]
     (jdbc/with-db-transaction [tx db/db-spec]
+      ;; Fetch task, questions and question progress for this page from DB.
       (let [questions (collect-questions assignment-progress task-ord tx)]
-        ;; Update question progress with answers.
-        (doall (map #(update-question-progress
-                       (:user session)
-                       assignment-progress
-                       %
-                       (extract-answers % answers)
-                       tx)
-                    questions))
+        (update-task-progress session assignment-progress questions answers tx)
         (let [user (:user session)
               next-task-ord (inc task-ord)
               prev-task-ord (dec task-ord)
@@ -207,11 +250,12 @@
               (resp/found (str "/user/progress/" assignment-id  "/" next-task-ord))
               (do
                 ;; Update completed timestamp.
-                (db/update-completed-progress! {:id (:id assignment-progress)}
-                                               {:connection tx})
-                (log/debug "User" (:email user)
-                           "completed assignment" assignment-id
-                           "(progress" (:id assignment-progress) ")!")
+                (when-not (:admin user)
+                  (db/update-completed-progress! {:id (:id assignment-progress)}
+                                                 {:connection tx})
+                  (log/debug "User" (:email user)
+                             "completed assignment" assignment-id
+                             "(progress" (:id assignment-progress) ")!"))
                 ;; All done, move on to home page.
                 ;; TODO clean progress from session
                 (resp/found (str "/user"))))

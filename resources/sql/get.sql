@@ -1,6 +1,9 @@
 -- name: find-user-by-email
 SELECT * FROM public.user WHERE email = :email;
 
+-- name: find-user-by-id
+SELECT * FROM public.user WHERE id = :id;
+
 -- name: load-assignment-categories
 SELECT category, count(*) AS cnt FROM static.assignment GROUP BY category;
 
@@ -9,6 +12,9 @@ SELECT * FROM static.assignment WHERE category = :category;
 
 -- name: find-assignment-by-id
 SELECT * FROM static.assignment WHERE id = :id;
+
+-- name: find-progress-by-id
+SELECT * FROM public.assignment_progress WHERE id = :id;
 
 -- name: find-progress-by-assignment-id
 SELECT *

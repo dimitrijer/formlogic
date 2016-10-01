@@ -11,35 +11,39 @@
 
 (defroutes user-routes
   (context "/user" {{user :user :as session} :session :as req}
-    (GET "/" [] (if (:admin user)
-                  (views/administrator-page user)
-                  (views/assignments-page user)))
-    (GET "/logout" [] (controllers/logout session))
-    (GET "/progress/:assignment-id" [assignment-id] (controllers/attach-progress
-                                                      session
-                                                      user
-                                                      assignment-id))
-    (GET "/progress/:assignment-id/:task" [assignment-id task]
-         (or (controllers/render-task session assignment-id (Integer/parseInt task))
-             (-> (resp/forbidden views/forbidden-page)
-                 (resp/content-type "text/html")
-                 (resp/charset "utf-8"))))
-    (POST "/progress/:assignment-id/:task" [assignment-id task continue]
-          (or (controllers/save-task session
-                                     assignment-id
-                                     (Integer/parseInt task)
-                                     (:form-params req)
-                                     (Boolean/parseBoolean continue))
-              (-> (resp/forbidden views/forbidden-page)
-                  (resp/content-type "text/html")
-                  (resp/charset "utf-8"))))
-    ;; The following are supposed to be invoked by admins only.
-    (GET "/students" [email] (controllers/search-students user email))
-    (GET "/assignments" [assignment_name] (controllers/search-assignments user assignment_name))
-    (GET "/students/progresses" [id] (controllers/get-progresses-for-student user id))
-    (GET "/assignments/progresses" [id] (controllers/get-progresses-for-assignment user id))
-    (GET "/progresses/:progress-id/:task" [progress-id task]
-         (controllers/render-task session (Integer/parseInt task)))))
+           (GET "/" [] (if (:admin user)
+                         (views/administrator-page user)
+                         (views/assignments-page user)))
+           (GET "/logout" [] (controllers/logout session))
+           (GET "/progress/:assignment-id" [assignment-id]
+                (controllers/attach-progress session user (Integer/parseInt assignment-id)))
+           (GET "/progress/:assignment-id/:task" [assignment-id task]
+                (or (controllers/render-task session
+                                             (Integer/parseInt assignment-id)
+                                             (Integer/parseInt task))
+                    (-> (resp/forbidden views/forbidden-page)
+                        (resp/content-type "text/html")
+                        (resp/charset "utf-8"))))
+           (POST "/progress/:assignment-id/:task" [assignment-id task continue]
+                 (or (controllers/save-task session
+                                            (Integer/parseInt assignment-id)
+                                            (Integer/parseInt task)
+                                            (:form-params req)
+                                            (Boolean/parseBoolean continue))
+                     (-> (resp/forbidden views/forbidden-page)
+                         (resp/content-type "text/html")
+                         (resp/charset "utf-8"))))
+           ;; The following are supposed to be invoked by admins only.
+           (GET "/students" [email]
+                (controllers/search-students user email))
+           (GET "/assignments" [assignment_name]
+                (controllers/search-assignments user assignment_name))
+           (GET "/students/progresses" [id]
+                (controllers/get-progresses-for-student user id))
+           (GET "/assignments/progresses" [id]
+                (controllers/get-progresses-for-assignment user id))
+           (GET "/progresses/:progress-id" [progress-id]
+                (controllers/attach-progress session (Integer/parseInt progress-id)))))
 
 (defroutes site-routes
   (GET "/" {session :session} (if (contains? session :user)

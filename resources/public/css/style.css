@@ -6,12 +6,12 @@
 .im-centered-med {
 	margin: auto;
 	max-width: 600px;
-} 
+}
 
 .im-centered-wide {
 	margin: auto;
 	max-width: 750px;
-} 
+}
 
 .tab-group {
 	margin-top: 15px;
@@ -20,4 +20,24 @@
 
 .red {
 	color: #ff0000;
+}
+
+.btn-outline.btn-success {
+	background-color: transparent;
+	color: #5cb85c;
+}
+
+.btn-outline.btn-danger {
+	background-color: transparent;
+	color: #d9534f;
+}
+
+.btn-outline.btn-success:hover {
+	color: #fff;
+	background-color: #5cb85c;
+}
+
+.btn-outline.btn-danger:hover {
+	color: #fff;
+	background-color: #d9534f;
 }

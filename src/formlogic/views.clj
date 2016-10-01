@@ -19,7 +19,7 @@
           [:title (h title)]
           (include-js "/js/angular.min.js"
                       "/js/angular-sanitize.min.js")
-          (include-js "/js/ui-bootstrap-tpls-2.1.3.min.js")
+          (include-js "/js/ui-bootstrap-tpls-2.1.4.min.js")
           (include-js "/js/script.js")
           (include-css "/css/style.css")
           (include-css "/css/bootstrap.min.css")
@@ -162,15 +162,19 @@
       (button-link "/" "Početna stranica" "btn btn-primary"))))
 
 (defn- navbar
-  [email]
+  [{admin? :admin email :email}]
   [:nav {:class "navbar navbar-inverse"}
    [:div {:class "container-fluid"}
     [:div {:class "navbar-header"} [:a {:class "navbar-brand" :href "/"} "Formlogic"]]
     [:ul {:class "nav navbar-nav"}
      [:li (elem/link-to "/" "Početna")]]
     [:ul {:class "nav navbar-nav navbar-right"}
-     [:li [:p {:class "navbar-text"} [:span {:class "glyphicon glyphicon-user"}] " " email]]
-     [:li (elem/link-to "/user/logout" [:span {:class "glyphicon glyphicon-log-out"}] " Odjava")]]]])
+     [:li [:p {:class "navbar-text"} [:span {:class (if-not admin?
+                                                      "glyphicon glyphicon-user"
+                                                      "glyphicon glyphicon-star")}]
+           (str " " email (when admin? " (administrator)"))]]
+     [:li (elem/link-to "/user/logout"
+                        [:span {:class "glyphicon glyphicon-log-out"}] " Odjava")]]]])
 
 (defn- panel-column
   [panel-class div-args title & contents]
@@ -184,8 +188,18 @@
   (label {:class "control-label" :for (str "question-" id)} "question"
          (str ord ". " body)))
 
+(defn- correct-radio-group [question]
+  [:div {:class "btn-group"}
+   [:hr]
+   [:label {:class "btn btn-success btn-outline"
+            :ng-model (str "question" (:id question) "correct")
+            :uib-btn-radio "true"} [:span {:class "glyphicon glyphicon-ok"}] " Tačno"]
+   [:label {:class "btn btn-danger btn-outline"
+            :ng-model (str "question" (:id question) "correct")
+            :uib-btn-radio "false"} [:span {:class "glyphicon glyphicon-remove"}] "Netačno"]])
+
 (defn- multiple-choice-question
-  [question progress]
+  [{admin? :admin} question progress]
   (let [radio? (= (:type question) "single")
         elem-class (if radio? "radio" "checkbox")
         elem-id (fn [idx] (str "question"
@@ -193,26 +207,43 @@
                                (when-not radio? (str "-option-" idx))))
         elem-factory (if radio? radio-button check-box)
         active? (fn [choice] (some #{choice} (:answers progress)))]
-  [:div {:class "form-group"}
-   (question-label question)
-   (for [choice (map-indexed vector (:choices question))
-         :let [[idx text] choice]]
-     [:div {:class elem-class}
-      [:label (elem-factory (elem-id idx) (active? text) (h text)) (h text)]])]))
+    [:div {:class "form-group"}
+     (question-label question)
+     (for [choice (map-indexed vector (:choices question))
+           :let [[idx text] choice]]
+       [:div {:class elem-class}
+        [:label (elem-factory {:disabled (if admin? "true" "false")}
+                              (elem-id idx)
+                              (active? text)
+                              (h text)) (h text)]])
+     (when admin? (correct-radio-group question))]))
 
 (defn- fill-question
-  [{id :id :as question} progress]
+  [{admin? :admin} {id :id :as question} progress]
   [:div {:class "form-group"}
    (question-label question)
-   (text-area {:class "form-control" :rows "3"}
+   (text-area {:class "form-control"
+               :rows "3"
+               :disabled (if admin? "true" "false")}
               (str "question" id "-fill")
-              (first (:answers progress)))])
+              (first (:answers progress)))
+   (when admin? (correct-radio-group question))])
 
 (defn- render-question
-  [{:keys [question progress]}]
-  (case (:type question)
-    ("single" "multiple") (multiple-choice-question question progress)
-    "fill" (fill-question question progress)))
+  [user {:keys [question progress]}]
+  [:div
+   (when (:admin user)
+     (let [correct-elem-id (str "question" (:id question) "correct")]
+       ;; This hidden field will be sent along with the rest of form parameters
+       ;; on submit. Its value is bound to the same Angular model as correct
+       ;; radio group.
+       [:input {:type "hidden"
+                :name correct-elem-id
+                :ng-init (str correct-elem-id " = " (:correct progress))
+                :value (str "{{ " correct-elem-id " }}")}]))
+   (case (:type question)
+     ("single" "multiple") (multiple-choice-question user question progress)
+     "fill" (fill-question user question progress))])
 
 (defn- calculate-perc-completed
   [assignment-progress-id assignment-id]
@@ -277,7 +308,7 @@
   [user]
   (page-template
     "Zadaci"
-    (navbar (:email user))
+    (navbar user)
     [:h1 "Zadaci"]
     [:uib-accordion
      (for [category (db/load-assignment-categories)
@@ -313,10 +344,18 @@
               :type "button"
               :ng-click "$ctrl.cancel()"} cancel-label]]])
 
+(defn- task-demonstration-panel [task]
+  (panel-column "panel-default"
+                {:class "col-lg-6"}
+                "Demonstracija"
+                ;; Eval magic right here.
+                (eval (read-string (:contents task)))))
+
 (defn task-page
   [user assignment-progress {:keys [task questions]}]
   {:pre [task]}
-  (let [only-questions? (nil? (:contents task))
+  (let [admin? (:admin user)
+        only-questions? (nil? (:contents task))
         first-task? (= 1 (:ord task))
         assignment-id (get-in assignment-progress [:assignment :id])
         total-tasks (:count (db/unique-result db/get-number-of-tasks-for-assignment
@@ -327,7 +366,7 @@
     (page-template
       "Pitanja"
       (include-js "/js/task.js")
-      (navbar (:email user))
+      (navbar user)
       [:h1 {:class "text-center"} (get-in assignment-progress [:assignment :name])]
       [:h3 {:class "text-center"} (str "Stranica " (:ord task) " od " total-tasks)]
       [:div {:class "row"}
@@ -336,14 +375,10 @@
                            :type "success"
                            :animate "false"
                            :value perc-complete} (str perc-complete "%")]]]
+      (when admin? [:h5 (str "Student: " (get-in assignment-progress [:user :email]))])
       [:div {:class "row"}
-       ;; Demonstrations panel.
-       (when-not only-questions?
-         (panel-column "panel-default"
-                       {:class "col-lg-6"}
-                       "Demonstracija"
-                       ;; Eval magic right here.
-                       (eval (read-string (:contents task)))))
+       ;; Demonstration panel.
+       (when-not only-questions? (task-demonstration-panel task))
        ;; Questions panel.
        (panel-column "panel-primary"
                      {:class (str (when only-questions? "col-lg-offset-3 ")
@@ -360,7 +395,7 @@
                                                    "/"
                                                    (:ord task))
                              :action "#"}
-                      (when last-task?
+                      (when (and (not admin?) last-task?)
                         (modal-template-ok "ok-modal.html"
                                            "Potvrdite predaju"
                                            "Predaj"
@@ -368,7 +403,7 @@
                                            [:p "Da li ste " [:strong "sigurni"] " da želite da predate test? Ova akcija se ne može poništiti."]))
                       (anti-forgery-field)
                       (for [question questions]
-                        (render-question question))
+                        (render-question user question))
                       [:div {:class "row"}
                        (when-not first-task?
                          [:button {:class "col-lg-offset-2 col-lg-3 btn btn-default"
@@ -383,8 +418,8 @@
                                                "btn-primary ")
                                              "col-lg-3 btn")
                                  :type "button"
-                                 :ng-click (if last-task? "openOkModal()" "onSubmitNext()")}
-                        (if last-task?  "Predaj" "Dalje")]]])])))
+                                 :ng-click (if (and (not admin?) last-task?) "openOkModal()" "onSubmitNext()")}
+                        (if last-task?  (if-not admin? "Predaj" "Kraj") "Dalje")]]])])))
 
 (defn- student-progress-tab
   []
@@ -417,7 +452,7 @@
       [:td "{{ progress.started_at }}"]
       [:td "{{ progress.completed_at }}"]
       [:td [:strong {:ng-class "{ red: progress.grade < 51 }"} "{{ progress.grade }}%"]]
-      [:td [:a {:href "/progresses/{{ progress.id }}/1"}
+      [:td [:a {:href "/user/progresses/{{ progress.id }}"}
             [:button {:class "btn btn-primary"
                       :type "button"} "Pregledaj"]]]]]]])
 
@@ -452,7 +487,7 @@
       [:td "{{ progress.started_at }}"]
       [:td "{{ progress.completed_at }}"]
       [:td [:strong {:ng-class "{ red: progress.grade < 51 }"} "{{ progress.grade }}%"]]
-      [:td [:a {:href "/progresses/{{ progress.id }}/1"}
+      [:td [:a {:href "/user/progresses/{{ progress.id }}"}
             [:button {:class "btn btn-primary"
                       :type "button"} "Pregledaj"]]]]]]])
 
@@ -461,7 +496,7 @@
   (page-template
     "Početna"
     (include-js "/js/admin.js")
-    (navbar (:email user))
+    (navbar user)
     [:h1 "Pregled testova"]
     [:div {:ng-controller "TypeaheadCtrl"}
      [:uib-tabset

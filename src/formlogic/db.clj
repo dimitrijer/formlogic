@@ -32,7 +32,7 @@
 (defn get-or-create-progress
   [user assignment-id]
   (let [query-params {:user_id (:id user)
-                      :assignment_id (Integer/parseInt assignment-id)}
+                      :assignment_id assignment-id}
         assignment-progress (unique-result find-progress-by-assignment-id
                                            query-params)]
     (if-not assignment-progress
