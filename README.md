@@ -60,6 +60,8 @@ manually:
 * Remember Me functionality (via cookies)
 * Use a scale for question grading, instead of boolean
 * UI for adding tests
+* Time limit for tests
+* Tests that can be taken only by students enrolled in the course
 ## License
 
 Copyright © 2016 Dimitrije Radojević

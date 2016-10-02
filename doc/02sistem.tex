@@ -27,7 +27,7 @@ Novi korisnici mogu da se registruju pritiskom na dugme \textbf{Registracija}. T
 \caption{\textit{Levo}: inicijalni izgled stranice za registrovanje, \textit{desno}: stranica za registracije nakon što već registrovani korisnik pokuša da se registruje}
 \label{fig:register}
 \end{figure}
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \fbox{\includegraphics[width=0.95\textwidth]{register-success}}
 \caption{Izgled stranice za registraciju nakon uspešne registracije}
@@ -127,8 +127,7 @@ Administrator se kreće kroz stranice sa pitanjima na isti način kao student, s
 
 \subsection{Dodavanje novih testova}
 Kako se dodavanje novih testova radi ubacivanjem novih redova u bazi, prvo je neophodno prikazati i objasniti entitete u bazi vezane za testove i relacije između njih (slika \ref{fig:db}).
-
-\begin{figure}[h]
+\begin{figure}[p]
 \centering
 \begin{tikzpicture}
 \node[entity] (a) at (0,0) {
@@ -144,7 +143,7 @@ category \hfill & \hfill \texttt{text} \\
 \node[entity, right=of a] (t) {
 static.\textbf{task}
 \nodepart{second}
-\begin{tabularx}{5cm}{X X}
+\begin{tabularx}{5.5cm}{X X}
 \underline{\textbf{id}} \hfill & \hfill \texttt{serial} \\
 assignment\_id \hfill & \hfill \texttt{int4} \\
 ord \hfill & \hfill \texttt{int4} \\
@@ -169,13 +168,16 @@ answers \hfill & \hfill \texttt{int2[]} \\
 \draw[dashed,-{Latex[length=3mm]}, thick] (a) -- (t);
 \draw[dashed,-{Latex[length=3mm]}, thick] (t) -- (q);
 \end{tikzpicture}
-\caption{Entiteti koji opisuju testove nalaze se u \texttt{static} shemi baze}
+\caption{Entiteti koji opisuju testove i relacije među njima}
 \label{fig:db}
 \end{figure}
 \begin{description}
 \item [\textbf{Assignment}] je \textit{top-level} entitet koji predstavlja jedan test. On sadrži ime i kategoriju testa. Primarni ključ se navodi prilikom ubacivanja u bazu.
-\item [\textbf{Task}] je entitet koji predstavlja stranicu jednog testa. Ovaj entitet ima egzistencijalnu zavisnost od \textbf{Assignment} entiteta, koja se modeluje stranim ključem u vidu kolone \texttt{assignment\_id}. Sadrži redni broj unutar testa i opcioni sadržaj panele sa demonstracijom.
-\item [\textbf{Question}] predstavlja jedno pitanje u okviru stranice testa. Ima egzistencijalnu zavisnost od \textbf{Task} entiteta (kolona \texttt{task\_id}). Sadrži redni broj unutar stranice testa, tip pitanja, telo pitanja, ponuđene odgovore (ili neke od mogućih odgovora, ukoliko se radi o pitanju na koje se odgovor daje u slobodnoj formi) u vidu niza stringova, i niz celih brojeva koji označavaju indekse \emph{tačnih} odgovora unutar niza ponuđenih odgovora.
+\item [\textbf{Task}] je entitet koji predstavlja stranicu jednog testa. Ovaj entitet ima egzistencijalnu zavisnost od \textbf{Assignment} entiteta, koja se modeluje stranim ključem u vidu kolone \texttt{assignment\_id}. Sadrži redni broj unutar testa i opcioni sadržaj panele sa demonstracijom. Primarni ključ se generiše automatski, inkrementiranjem sekvence.
+\item [\textbf{Question}] predstavlja jedno pitanje u okviru stranice testa. Ima egzistencijalnu zavisnost od \textbf{Task} entiteta (kolona \texttt{task\_id}). Sadrži redni broj unutar stranice testa, tip pitanja, telo pitanja, ponuđene odgovore u vidu niza stringova, i niz celih brojeva koji označavaju indekse \emph{tačnih} odgovora unutar niza ponuđenih odgovora. Primarni ključ se takođe generiše automatski, inkrementiranjem sekvence. Prilikom ubacivanja reda se proverava da li su indeksi u koloni \texttt{answers} u validnom opsegu koji je definisan brojem elemenata u \texttt{choices} tabeli.
 \end{description}
 
-\lstinputlisting[caption=Primer ubacivanja, label=lst:insert, language=SQL]{listings/assignment-example.sql}[float]
+Prema ovome, dodavanje novih testova svodi se na ubacivanje novog reda koji predstavlja test u \texttt{assignment} tabelu, ubacivanje novog reda za svaku stranicu u testu u \texttt{task} tabelu, i ubacivanje svih pitanja po stranici u \texttt{question} tabelu. Takođe je bitno napomenuti da se sve ove tabele nalaze u \texttt{static} shemi, gde su odvojene sve tabele koje se ne menjaju tokom \textit{runtime}-a aplikacije. Primer ubacivanja testa sa slike \ref{fig:task} je priložen u listingu \ref{lst:insert}.
+\lstinputlisting[float, floatplacement=p, caption=Primer dodavanja jednog testa sa jednom stranicom i tri pitanja, label=lst:insert, language=SQL]{listings/assignment-example.sql}
+
+Kako bi automatsko ocenjivanje radilo i za odgovore u slobodnoj formi, za takva pitanja autor preporučuje da se u \texttt{choices} kolonu ubace tačni odgovori u što više mogućih formi, a da se u \texttt{answers} koloni navedu svi indeksi iz \texttt{choices} niza.

@@ -163,10 +163,16 @@ ORM je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajuć
 
 \paragraph{Parsiranje logičkih jednačina} Mesto ručne izrade leksera i parsera za unošenje logičkih jednačina, autor se odlučio da iskoristi sjajnu Clojure biblioteku \emph{Instaparse}\cite{instaparse} za generaciju parsera bezkontekstnih gramatika. Ova biblioteka generiše parser na osnovu specifikacije gramatike u EBNF obliku. Pri tome podržava levu i desnu rekurziju i regularne izraze. Izlaz parsera je stablo parsiranja u obliku standardnog Clojure vektora. Instaparse može da parsira i dvosmislene gramatike, tako što vraća sekvencu svih mogućih stabala parsiranja.
 
-\paragraph{Logovanje} Za logovanje se koriste već dobro poznata rešenja u vidu \emph{Log4j} biblioteke i \emph{SLF4j} fasade. Konfiguracija se vrši putem tekstualnog fajla.
+\paragraph{Ostalo} Za logovanje se koriste već dobro poznata rešenja u vidu \emph{Log4j} biblioteke i \emph{SLF4j} fasade. Konfiguracija sistema vrši se preko EDN (\textit{Extensible Data Notation}) datoteka i biblioteke zvane \emph{Immuconf}. EDN je zapravo podskup Clojure jezika, i predstavlja standard za serijalizaciju podataka. \textit{Cheshire} se koristi za konverziju Clojure podataka u JSON format, i obratno. Konačno, \textit{Postal} biblioteka se koristi za slanje email poruka sa lozinkom korisnicima nakon uspešne registracije.
 
 \subsection{Frontend tehnologije}
 
 \emph{AngularJS}\cite{angularjs} je korišćen kao \textit{de facto} standard za frontend JavaScript framework, u kombinaciji sa \emph{Bootstrap}\cite{bootstrap} CSS stilovima. Angular je uglavnom korišćen za validaciju obrazaca i POST zahteve ka serveru u pozadini, dok Bootstrap obezbeđuje podrazumevanu temu ugodnu za oko, ikonice, i fluidan \textit{layout} stranice koji automatski prilagođava stranicu tipu uređaja, bilo da je to desktop ili mobilni internet pregledač. HTML stranice su u skladu sa HTML5 standardom.
 
+% TODO reci da se koristi bootstrap module for angular, da se ne koristi bootstrap JSS ni jquery
+
 Za prikazivanje logičkih jednačina koristi se JS biblioteka \emph{KaTeX}\footnote{\url{https://github.com/Khan/KaTeX}}, koja omogućava efikasno renderovanje jednačina u \LaTeX formatu.
+
+\subsection{Alati za kompajliranje, pakovanje i distribuciju aplikacije}
+
+% TODO Leiningen
