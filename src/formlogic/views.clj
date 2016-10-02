@@ -212,7 +212,7 @@
      (for [choice (map-indexed vector (:choices question))
            :let [[idx text] choice]]
        [:div {:class elem-class}
-        [:label (elem-factory {:disabled (if admin? "true" "false")}
+        [:label (elem-factory (merge {} (when admin? {:disabled "true"}))
                               (elem-id idx)
                               (active? text)
                               (h text)) (h text)]])
@@ -222,9 +222,8 @@
   [{admin? :admin} {id :id :as question} progress]
   [:div {:class "form-group"}
    (question-label question)
-   (text-area {:class "form-control"
-               :rows "3"
-               :disabled (if admin? "true" "false")}
+   (text-area (merge {:class "form-control" :rows "3"}
+                    (when admin? {:disabled "true"}))
               (str "question" id "-fill")
               (first (:answers progress)))
    (when admin? (correct-radio-group question))])
