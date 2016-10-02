@@ -7,31 +7,35 @@ Prva stranica koja se prikazuje kada korisnik uputi pretraživač na adresu serv
 
 Novi korisnici mogu da se registruju pritiskom na dugme \textbf{Registracija}. Ta akcija ih vodi na stranicu za registrovanje novih korisnika (URI: \texttt{/register}, slika \ref{fig:register}), koja od korisnika traži da unese email adresu. Ista ograničenja vezana za email adresu se primenjuju i ovde. Pokušaj postojećeg korisnika da se ponovo registruje rezultuje greškom. Nakon što unese email, pritiskom na dugme \textbf{Izvrši} se korisnik registruje na sistem. Nakon uspešne registracije korisniku se prikazuje stranica sa slike \ref{fig:register-success}. Tom prilikom se na unetu email adresu automatski šalje email sa nasumično generisanom lozinkom za tog korisnika. Sa ovom lozinkom korisnik sada može da se uloguje na sistem preko stranice za logovanje.
 \begin{figure}[p]
-\includegraphics[width=0.5\textwidth]{login}
-\includegraphics[width=0.5\textwidth]{login-wrongemail}
-\caption{Levo: inicijalni izgled login stranice, desno: login stranica tokom unosa email adrese}
+\centering
+\fbox{\includegraphics[width=0.45\textwidth]{login}
+\includegraphics[width=0.45\textwidth]{login-wrongemail}}
+\caption{\textit{Levo}: inicijalni izgled login stranice, \textit{desno}: login stranica tokom unosa email adrese}
 \label{fig:login}
 \end{figure}
 \begin{figure}[p]
-\includegraphics[width=0.5\textwidth]{login-error-unknown}
-\includegraphics[width=0.5\textwidth]{login-error-password}
-\caption{Login stranica nakon što neregistrovani korisnik pokuša da se uloguje (levo), ili ukoliko korisnik unese pogrešnu lozinku (desno)}
+\centering
+\fbox{\includegraphics[width=0.45\textwidth]{login-error-unknown}
+\includegraphics[width=0.45\textwidth]{login-error-password}}
+\caption{\textit{Levo}: izgled login stranice nakon što neregistrovani korisnik pokuša da se uloguje, \textit{desno}: izgled login stranice ukoliko korisnik unese pogrešnu lozinku}
 \label{fig:login-error}
 \end{figure}
 \begin{figure}[p]
-\includegraphics[width=0.5\textwidth]{register}
-\includegraphics[width=0.5\textwidth]{register-error}
+\centering
+\fbox{\includegraphics[width=0.45\textwidth]{register}
+\includegraphics[width=0.45\textwidth]{register-error}}
 \caption{\textit{Levo}: inicijalni izgled stranice za registrovanje, \textit{desno}: stranica za registracije nakon što već registrovani korisnik pokuša da se registruje}
 \label{fig:register}
 \end{figure}
 \begin{figure}[h]
-\includegraphics[width=\textwidth]{register-success}
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{register-success}}
 \caption{Izgled stranice za registraciju nakon uspešne registracije}
 \label{fig:register-success}
 \end{figure}
 
 \subsection{Stranica sa pregledom testova}
-Nakon uspešne prijave na sistem, korisniku se prikazuje stranica sa pregledom svih testova trenutno u sistemu (URI: \texttt{/user}, slike \ref{fig:assignments} i \ref{fig:assignments-collapsed}). Ova stranica se prikazuje i kao početna stranica ukoliko je korisnik već ulogovan na sistem, a pregledač usmeri na \textit{root} URL servisa. Testovi su grupisani po kategorijama, i prikazani unutar tabele u svakoj kategoriji. Zaglavlja tabel sadrže imena kategorija i predstavljaju interaktivne linkove, koji na klik proširuju svoj sadržaj, tj. telo tabele sa testovima.
+Nakon uspešne prijave na sistem, korisniku se prikazuje stranica sa pregledom svih testova trenutno u sistemu (URI: \texttt{/user}, slike \ref{fig:assignments} i \ref{fig:assignments-collapsed}). Ova stranica se prikazuje i kao početna stranica ukoliko je korisnik već ulogovan na sistem, a pregledač usmeri na \textit{root} URL servisa. Testovi su grupisani po kategorijama, i prikazani unutar tabele u svakoj kategoriji. Zaglavlja tabele sadrže imena kategorija i predstavljaju interaktivne linkove, koji na klik proširuju svoj sadržaj, tj. telo tabele sa testovima.
 
 Za svaki test se prikazuje ime testa, broj stranica sa pitanjima, i ukupan broj pitanja. Testovi koji se prikazuju na ovoj stranici se dele na:
 \begin{itemize}
@@ -41,13 +45,15 @@ Za svaki test se prikazuje ime testa, broj stranica sa pitanjima, i ukupan broj 
 \item \textbf{Nezapočete testove}, tj. testove koje korisnik nikada nije polagao. Za ove testove se dodatno prikazuje link ka stranici sa testom i prazan progres. Boja pozadine ovih unosa je bela.
 \end{itemize}
 \begin{figure}[p]
-\includegraphics[width=\textwidth]{assignments}
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{assignments}}
 \caption{Inicijalni izgled stranice sa zadacima, sa izlistanim kategorijama (broj testova unutar kategorije je naznačen sa desne strane interaktivnog linka)}
 \label{fig:assignments}
 \end{figure}
 \begin{figure}[p]
-\includegraphics[width=\textwidth]{assignments-collapsed}
-\includegraphics[width=\textwidth]{assignments-collapsed-progress}
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-collapsed}}
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-collapsed-progress}}
 \caption{\textit{Gore}: stranica sa zadacima nakon što je sadržaj prve kategorije proširen, za korisnika koji nije polagao nijedan test, \textit{dole}: stranica sa zadacima sa prvim testom u toku, položenim drugim testom i nepoloženim trećim testom}
 \label{fig:assignments-collapsed}
 \end{figure}
@@ -55,11 +61,17 @@ Za svaki test se prikazuje ime testa, broj stranica sa pitanjima, i ukupan broj 
 Nakon što korisnik klikne na dugme \textbf{Polaži}, prikazuje mu se prva stranica sa pitanjima odabranog testa. Kada korisnik prvi put otvori stranicu sa pitanjima nekog testa, smatra se da je otpočeo proces izrade tog testa, te će unos u tabeli testova za taj test od tada biti označen žutom pozadinom.
 
 \subsection{Stranica sa pitanjima}
-URI stranice sa pitanjima je sledećeg oblika: \path{/user/progress/<assignment-id>/<page-ord>} gde je \texttt{assignment-id} ID zadatka, a \texttt{page-ord} redni broj stranice sa pitanjima tog zadatka. Redni brojevi stranica počinju od broja 1.
+\label{section:submit}
+URI stranice sa pitanjima je sledećeg oblika:
+\begin{verbatim}
+/user/progress/<assignment-id>/<page-ord>
+\end{verbatim}
+gde je \texttt{assignment-id} ID zadatka, a \texttt{page-ord} redni broj stranice sa pitanjima tog zadatka. Redni brojevi stranica počinju od broja 1.
 
 Stranica sa pitanjima sastoji se od tri dela (slika \ref{fig:task}). Prvi deo je zaglavlje stranice, na kome se nalazi ime testa, redni broj trenutne stranice sa pitanjima, ukupan broj stranica sa pitanjima u testu i progres popunjavanja testa, u procentima. Progres se računa na osnovu broja popunjenih pitanja, tako da korisnik može da primeti ukoliko je slučajno preskočio neko pitanje sa prethodnih stranica pre nego što preda test.
 \begin{figure}[h]
-\includegraphics[width=\textwidth]{task}
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{task}}
 \caption{Izgled stranice sa pitanjima sa popunjenim odgovorima}
 \label{fig:task}
 \end{figure}
@@ -68,11 +80,102 @@ Drugi deo stranice sa pitanjima je deo sa demonstracijom. Ovaj opcioni deo se na
 
 Treći deo stranice sa pitanjima su sama pitanja. Ona se nalaze u panelu sa desne strane. Na jednoj stranici sa pitanjima moguće je imati proizvoljan broj pitanja. Pitanja su navedena jedna ispod drugog, u rastućem redosledu rednog broja pitanja. Kada se stranica učita, odgovor na svako pitanje je nepopunjen. Kada korisnik jednom odgovori na pitanja sa jednim ili više ponuđenih odgovora, više nije u mogućnosti da poništi svoj odgovor i vrati pitanje u nepopunjeno stanje. Nakon svih pitanja, na dnu panela se nalaze dva dugmeta: \textbf{Nazad} i \textbf{Dalje}. Prvo dugme služi da se korisnik vrati na prethodnu stranicu sa pitanjima, a potonje dugme služi da se ode na sledeću stranicu sa pitanjima. U oba slučaja se čuvaju odgovori koje je korisnik dao na trenutnoj stranici.
 
-Kada se korisnik nađe na poslednjoj stranici sa pitanjima, na dnu stranice pojavljuje se dugme \textbf{Predaj}. Nakon pritiska na ovo dugme korisniku se prikazuje modalni dijalog koji upozorava na to da akcija predavanja testa ne može da se poništi, dajući korisniku još jednu šansu da proveri svoje odgovore (slika \ref{fig:test-submit}. Ukoliko korisnik u pomenutom dijalogu potvrdi akciju predaje, test se smatra završenim, a korisnik se vraća na stranicu sa pregledom testova. Od ovog trenutka korisnik više nije u mogućnosti da menja odgovore na pitanja ovog testa, niti da ga ponovo polaže.
+Kada se korisnik nađe na poslednjoj stranici sa pitanjima, na dnu stranice pojavljuje se dugme \textbf{Predaj}. Nakon pritiska na ovo dugme korisniku se prikazuje modalni dijalog koji upozorava na to da akcija predavanja testa ne može da se poništi, dajući korisniku još jednu šansu da proveri svoje odgovore (slika \ref{fig:task-submit}. Ukoliko korisnik u pomenutom dijalogu potvrdi akciju predaje, test se smatra završenim, a korisnik se vraća na stranicu sa pregledom testova. Od ovog trenutka korisnik više nije u mogućnosti da menja odgovore na pitanja ovog testa, niti da ga ponovo polaže.
 
 Ukoliko korisnik prekine polaganje u bilo kom trenutku, na primer tako što zatvori prozor pregledača ili ode na neku drugu internet stranicu, može nastaviti sa polaganjem tako što će izabrati test čije je polaganje prekinuo sa stranice sa pregledom testova. Dotadašnji progres, tj. odgovori koje je korisnik dao pre nego što je prekinuo polaganje, će biti restaurirani.
 \begin{figure}[h]
-\includegraphics[width=\textwidth]{task-submit}
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{task-submit}}
 \caption{Izgled dijaloga za potvrdu predaje testa}
 \label{fig:task-submit}
 \end{figure}
+
+\section{Opis rada sistema iz perspektive profesora}
+\subsection{Stranica za pretraživanje završenih testova}
+Nakon uspešnog logovanja na sistem, administratorima se prikazuje stranica za pretraživanje i pregled odrađenih testova (URI: \texttt{/user}, slika \ref{fig:assignments-admin}). Ova stranica je podeljena na dva dela. Prvi deo se koristi za pretragu testova preko email naloga studenata, a drugi deo se koristi za pretragu testova po oblastima. Prelaz između ove dve stranice vrši se odabirom zaliska pri vrhu strane.
+
+\begin{figure}[h]
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-admin-students}}
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-admin-tests}}
+\caption{Dinamičko sužavanje izbora pretrage tokom kucanja, \textit{gore}: primer pretrage preko email naloga studenata, \textit{dole}: primer pretrage preko imena testa}
+\label{fig:assignments-admin}
+\end{figure}
+
+Tokom unošenja email naloga, ili imena testa, prilikom pretrage, izbor se dinamički sužava, tako da je dovoljno otkucati samo mali broj karaktera kako bi se prikazao željeni izbor. Stavke koje odgovaraju upitu se prikazuju u \textit{dropdown} listi, a kroz prikazane stavke se može kretati strelicama gore i dole. Izabrana stavka iz liste se potvrđuje pritiskom na taster Enter, a može se odabrati i klikom. Nakon potvrđivanja izbora, server vraća sve odrađene testove (instance testova koje su predate, pogledati sekciju \ref{section:submit}, i ti rezultati se prikazuju u tabelarnom obliku, ispod formulara za pretragu. Za svaki odrađen test prikazuje se ime testa, email nalog studenta, vreme početka i kraja izrade, ocena u obliku procenta pitanja na koja je student dao tačan odgovor, i, najzad, link za pregled testa (slika \ref{fig:assignments-admin-results}).
+\begin{figure}[h]
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-admin-student-results}}
+\fbox{\includegraphics[width=0.95\textwidth]{assignments-admin-test-results}}
+\caption{\textit{Gore}: primer rezultata pretrage preko email naloga studenata, \textit{dole}: primer rezultata pretrage preko imena testa}
+\label{fig:assignments-admin-results}
+\end{figure}
+
+\subsection{Pregled i izmena ocene završenog testa}
+Nakon što administrator odabere jedan od testova za pregled, prikazuje se stranica koja je identična stranici iz sekcije \ref{section:submit} (čak je i URI isti), sa nekoliko razlika (slika \ref{fig:task-admin}, uporediti sa slikom \ref{fig:task}).
+\begin{figure}[h]
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{task-admin}}
+\caption{Izgled stranice za pregled testa - izmena ocene za odgovor se vrši izborom jednog od dva \textit{radio} dugmeta ispod svakog odgovora}
+\label{fig:task-admin}
+\end{figure}
+Prva razlika je u tome što administratoru nije dozovljeno da menja odgovore koje je student dao - sve kontrole formulara su onemogućene. Ovim se garantuje da originalni odgovori ne mogu biti menjani nakon što student preda test. Takođe, pri vrhu stranice se prikazuje email nalog studenta koji je predao test.
+
+Još jedna razlika je u tome što se na ovoj stranici nakon svakog pitanja prikazuje automatski dodeljena\emph{ocena} za to pitanje. Ocena je jedna obična Bulova vrednost koju sistem dodeljuje svakom odgovoru nakon što student preda test, i označava da li se odgovor na pitanje prihvata kao tačan, ili odbacuje kao netačan odgovor. Administrator može da menja ovu vrednost za svako pitanje po svom nahođenju, i time utiče na konačnu ocenu testa, u vidu procenta uspešnosti. Kako je za pitanja sa jednim ili više ponuđenih odgovora automatsko ocenjivanje trivijalno, ova funkcionalnost se uglavnom koristi za pitanja na koje odgovor treba dati u slobodnoj formi, gde je mogućnost sistema da korektno oceni odgovor ograničena. Tada administrator može odlučiti da je student dao tačan odgovor tamo gde je sistem procenio da odgovor nije bio tačan, ili obratno.
+
+Administrator se kreće kroz stranice sa pitanjima na isti način kao student, s tim što se na poslednjoj stranici mesto dugmeta \textbf{Predaj} nalazi dugme \textbf{Kraj}. Klik na ovo dugme administratora vodi na početnu stranicu. Bitno je napomenuti da se ovim ne menja zapisan datum predaje testa. Ovo predstavlja finalnu razliku u odnosu na funkcionalnost stranice kada joj pristupa student.
+
+\subsection{Dodavanje novih testova}
+Kako se dodavanje novih testova radi ubacivanjem novih redova u bazi, prvo je neophodno prikazati i objasniti entitete u bazi vezane za testove i relacije između njih (slika \ref{fig:db}).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\node[entity] (a) at (0,0) {
+static.\textbf{assignment}
+\nodepart{second}
+\begin{tabularx}{4cm}{X X}
+\underline{\textbf{id}} \hfill & \hfill \texttt{int4} \\
+name \hfill & \hfill \texttt{text} \\
+category \hfill & \hfill \texttt{text} \\
+\end{tabularx}
+};
+
+\node[entity, right=of a] (t) {
+static.\textbf{task}
+\nodepart{second}
+\begin{tabularx}{5cm}{X X}
+\underline{\textbf{id}} \hfill & \hfill \texttt{serial} \\
+assignment\_id \hfill & \hfill \texttt{int4} \\
+ord \hfill & \hfill \texttt{int4} \\
+contents \hfill & \hfill \texttt{text} \\
+\end{tabularx}
+};
+
+\node[entity, below=of t] (q) {
+static.\textbf{question}
+\nodepart{second}
+\begin{tabularx}{7cm}{X X}
+\underline{\textbf{id}} \hfill & \hfill \texttt{serial} \\
+task\_id\hfill & \hfill \texttt{int4} \\
+ord \hfill & \hfill \texttt{int4} \\
+type \hfill & \hfill \texttt{question\_type} \\
+body \hfill & \hfill \texttt{text} \\
+choices \hfill & \hfill \texttt{text[]} \\
+answers \hfill & \hfill \texttt{int2[]} \\
+\end{tabularx}
+};
+
+\draw[dashed,-{Latex[length=3mm]}, thick] (a) -- (t);
+\draw[dashed,-{Latex[length=3mm]}, thick] (t) -- (q);
+\end{tikzpicture}
+\caption{Entiteti koji opisuju testove nalaze se u \texttt{static} shemi baze}
+\label{fig:db}
+\end{figure}
+\begin{description}
+\item [\textbf{Assignment}] je \textit{top-level} entitet koji predstavlja jedan test. On sadrži ime i kategoriju testa. Primarni ključ se navodi prilikom ubacivanja u bazu.
+\item [\textbf{Task}] je entitet koji predstavlja stranicu jednog testa. Ovaj entitet ima egzistencijalnu zavisnost od \textbf{Assignment} entiteta, koja se modeluje stranim ključem u vidu kolone \texttt{assignment\_id}. Sadrži redni broj unutar testa i opcioni sadržaj panele sa demonstracijom.
+\item [\textbf{Question}] predstavlja jedno pitanje u okviru stranice testa. Ima egzistencijalnu zavisnost od \textbf{Task} entiteta (kolona \texttt{task\_id}). Sadrži redni broj unutar stranice testa, tip pitanja, telo pitanja, ponuđene odgovore (ili neke od mogućih odgovora, ukoliko se radi o pitanju na koje se odgovor daje u slobodnoj formi) u vidu niza stringova, i niz celih brojeva koji označavaju indekse \emph{tačnih} odgovora unutar niza ponuđenih odgovora.
+\end{description}
+
+\lstinputlisting[caption=Primer ubacivanja, label=lst:insert, language=SQL]{listings/assignment-example.sql}[float]

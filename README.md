@@ -58,8 +58,8 @@ manually:
 * OpenSSL
 * Reset password
 * Remember Me functionality (via cookies)
-* Log each request start and end, and keep started time in session.
-
+* Use a scale for question grading, instead of boolean
+* UI for adding tests
 ## License
 
 Copyright © 2016 Dimitrije Radojević

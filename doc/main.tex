@@ -6,11 +6,50 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage[backend=biber]{biblatex}
-\usepackage{hyperref}
-\usepackage{graphicx}
-
+\usepackage[babel]{csquotes} % Biblatex complains when this is not used.
+\usepackage[unicode]{hyperref} % Links.
+\usepackage{microtype} % Greatly improves word spacing in paragraphs.
+\usepackage{parskip} % Nicer parskip, with no parindent.
+\usepackage{graphicx} % Pretty images.
+\usepackage{tabularx} % Tables.
+\usepackage{tikz} % Diagrams.
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{positioning}
+\tikzset{entity/.style={
+    draw=black,
+    fill=yellow!16,
+    rectangle split,
+    rectangle split parts = 2,
+    rectangle split part align={center,left}
+}}
+\usetikzlibrary{arrows.meta}
+\usepackage{listings} % Code listings.
+\lstset{
+    language=SQL,
+    captionpos=b,
+    basicstyle=\ttfamily\scriptsize,
+    numberstyle=\tiny,
+    numbers=none,
+    aboveskip=\bigskipamount,
+    belowskip=\bigskipamount,
+    backgroundcolor=\color{gray!10},
+    frame=shadowbox,
+    tabsize=2,
+    rulecolor=\color{black!30},
+    escapechar={\@},
+    showspaces=false,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=true,
+    framextopmargin=2pt,
+    framexbottommargin=2pt,
+    extendedchars=false,
+    inputencoding=utf8
+}
+\usepackage[titletoc]{appendix}
+%\usepackage{float}
 \graphicspath{{images/}}
-%\setlength{\parskip}{0.6em}
+%\setlength{\parskip}{0.5em}
 
 \addbibresource{literatura.bib}
 \author{Dimitrije Radojević \\ br. ind. 09/0112 \\ Elektrotehnički fakultet, Univerzitet u Beogradu}
