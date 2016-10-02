@@ -16,3 +16,5 @@ log
 .vagrant
 # OS X stuff.
 .DS_Store
+# Vim swp files
+*.swp
