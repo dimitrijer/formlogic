@@ -33,12 +33,11 @@
                  ;; Various stuff.
                  [org.clojure/math.combinatorics "0.1.3"]
                  ;; JSON library.
-                 [cheshire "5.6.3"]
-                 ]
+                 [cheshire "5.6.3"]]
   :main ^:skip-aot formlogic.core
   :target-path "target/%s"
   :plugins [[lein-ring "0.9.7"]]
-  :ring {:handler formlogic.core/app
+  :ring {:handler formlogic.routes/app
          :nrepl {:start? true
                  :port 9998}}
   :profiles {:uberjar {:aot :all}
