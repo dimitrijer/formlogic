@@ -44,11 +44,11 @@ Nakon što korisnik odgovori na sva pitanja sa testa, na poslednjoj stranici tre
 Ukoliko korisnik u bilo kom trenutku prekine polaganje testa, potrebno je omogućiti nastavljanje polaganja prilikom sledećeg logovanja korisnika. Naravno, treba restaurirati dotadašnji progres polaganja testa.
 
 \subsubsection{Administratorski interfejs}
-Za razliku od običnih korisnika, nakon što se administrator uloguje treba prikazati pregled ocenjenih testova studenata. Za svaki odrađeni test treba prikazati naziv testa, ime studenta, datum polaganja i uspešnost. Radi lakšeg prikazivanja rezultata, treba omogućiti sortiranje rezultata po svim kolonama, kao i filtriranje po email nalogu studenta.
-
-% TODO
+Za razliku od običnih korisnika, nakon što se administrator uloguje treba prikazati pregled ocenjenih testova studenata. Za svaki odrađeni test treba prikazati naziv testa, ime studenta, datum polaganja i uspešnost. Radi lakšeg prikazivanja rezultata, treba omogućiti filtriranje po email nalogu studenta, i po svakom određenom testu.
 
 Administrator treba da ima mogućnost da pregleda svaku instancu završenog testa, tako što mu se prikaže isti interfejs kao za polaganje testa, ali bez mogućnosti menjanja odgovora. Međutim, administrator mora imati mogućnost promene automatske ocene tačnosti odgovora, tj. za svako pitanje administrator može pregaziti automatsku odluku sistema i oceniti odgovor kao tačan, tj. netačan. Ovo je izuzetno bitno za pitanja sa odgovorom u slobodnom stilu.
+
+Takođe, administrator treba da ima mogućnost ubacivanja novih testova u sistem
 
 \subsection{Druga grupa zahteva}
 Druga grupa zahteva je vezana za oblast formalne logike, i odnosi se na unos, transformaciju i prikazivanje logičkih izraza.
@@ -169,10 +169,14 @@ ORM je strategija povezivanja stanja objekata u memoriji sa stanjem odgovarajuć
 
 \emph{AngularJS}\cite{angularjs} je korišćen kao \textit{de facto} standard za frontend JavaScript framework, u kombinaciji sa \emph{Bootstrap}\cite{bootstrap} CSS stilovima. Angular je uglavnom korišćen za validaciju obrazaca i POST zahteve ka serveru u pozadini, dok Bootstrap obezbeđuje podrazumevanu temu ugodnu za oko, ikonice, i fluidan \textit{layout} stranice koji automatski prilagođava stranicu tipu uređaja, bilo da je to desktop ili mobilni internet pregledač. HTML stranice su u skladu sa HTML5 standardom.
 
-% TODO reci da se koristi bootstrap module for angular, da se ne koristi bootstrap JSS ni jquery
+Od Bootstrap-a se koristi samo CSS stil, a ostatak funkcionalnosti obezbeđuju Angular direktive za Bootstrap\footnote{\url{https://angular-ui.github.io/bootstrap/}}. Kako se ne koristi ni jQuery biblioteka (Angular dolazi sa svojom laganom alternativom, \textit{jqLite}), ovim se značajno štedi na veličini JavaScript koda koji pregledač učitava, a ne gubi se na funkcionalnosti.
 
 Za prikazivanje logičkih jednačina koristi se JS biblioteka \emph{KaTeX}\footnote{\url{https://github.com/Khan/KaTeX}}, koja omogućava efikasno renderovanje jednačina u \LaTeX formatu.
 
-\subsection{Alati za kompajliranje, pakovanje i distribuciju aplikacije}
+\subsection{Alat za kompajliranje i pakovanje aplikacije}
 
-% TODO Leiningen
+Iako se za kompajliranje i pakovanje Clojure aplikacija može koristiti Maven, \emph{Leiningen}\cite{leiningen} je alatka izbora za veliku većinu Clojure projekata. Popularan je zbog izuzetno lake konfiguracije - konfiguriše se preko jednog Clojure izvornog fajla u kome se specificira ime projekta i zavisnosti, koje se podrazumevano dovlače iz Maven centralnog repozitorijuma, kao i sa \url{http://clojars.org}. Preko \texttt{lein} komandne alatke moguće je: pokrenuti REPL (\texttt{lein repl}), napraviti izvršnu JAR arhivu, spakovanu sa svim zavisnostima (\texttt{lein uberjar}), pokrenuti server (\texttt{lein ring server-headless}) ili glavnu metodu projekta (\texttt{lein run}), kao i još mnogo toga.
+
+Pomenuta \emph{uberjar} arhiva veoma je pogodna za distribuciju na ciljnom serveru web aplikacije. Kako su sve zavisnosti spakovane, jedino što je potrebno da se web aplikacija pokrene jeste podešeno Java izvršno okruženje.
+
+Međutim, kako web aplikacija ima neke dodatne zahteve (Postgres server, napravljena baza, otvoren port u \textit{firewall} podešavanjima), napravljena je Vagrant skripta koja sve ovo radi kao deo \textit{provisioning}-a VirtualBox virtuelne instance. Dovoljno je pokrenuti \texttt{vagrant up} da bi se dobilo funkcionalno, lokalno okruženje u kojoj web aplikacija sluša na lokalnoj mreži na IP adresi \texttt{192.168.33.10:3000}. Instanca je zasnovana na CentOS 7 operativnom sistemu.

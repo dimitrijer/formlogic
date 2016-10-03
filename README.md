@@ -56,12 +56,13 @@ manually:
 
 ### Nice To Have
 * OpenSSL
+* Use better hashing for storing passwords
 * Reset password
 * Remember Me functionality (via cookies)
 * Use a scale for question grading, instead of boolean
-* UI for adding tests
-* Time limit for tests
-* Tests that can be taken only by students enrolled in the course
+* UI for adding assignments
+* Time limit for assignments, date limit for taking assignments (from-to)
+* Assignments that can be taken only by students enrolled in the course
 ## License
 
 Copyright © 2016 Dimitrije Radojević
