@@ -15,6 +15,7 @@
 \usepackage{tikz} % Diagrams.
 \usetikzlibrary{shapes.multipart}
 \usetikzlibrary{positioning}
+\usetikzlibrary{arrows.meta}
 \tikzset{entity/.style={
     draw=black,
     font=\footnotesize,
@@ -23,7 +24,6 @@
     rectangle split parts = 2,
     rectangle split part align={center,left}
 }}
-\usetikzlibrary{arrows.meta}
 \usepackage{listings} % Code listings.
 \lstset{
     language=SQL,
@@ -48,13 +48,12 @@
     inputencoding=utf8
 }
 \graphicspath{{images/}}
-%\setlength{\parskip}{0.5em}
+\addbibresource{literatura.bib} % References.
 
-\addbibresource{literatura.bib}
-\author{Dimitrije Radojević \\ br. ind. 09/0112 \\ Elektrotehnički fakultet, Univerzitet u Beogradu}
-\title{Diplomski rad}
-\date{20. septembar 2016.}
 \begin{document}
+% =======
+% Title page
+% =======
 \begin{titlepage}
 \centering
 \includegraphics[width=0.4\textwidth]{etf}\par
@@ -65,7 +64,6 @@
 \vspace{1cm}
 {\bfseries\large Diplomski rad \par}
 \vspace{1cm}
-
 \begin{tabularx}{0.8\textwidth}{l c}
 Student: \hfill & \itshape Dimitrije Radojević, br. ind. 09/0112 \\
 \hfill & \hfill \\
@@ -76,13 +74,25 @@ Mentori: \hfill & \itshape Boško Nikolić, PhD \\
 {Elektrotehnički fakultet, Univerzitet u Beogradu \par}
 \today
 \end{titlepage}
+
+% ===
+% TOC
+% ===
 \tableofcontents
+
+% =======
+% Chapters
+% =======
 \input{00uvod.tex}
 % TODO sredi reference iz zahteva
 \input{01zahtevi.tex}
 \input{02sistem.tex}
 \input{03realizacija.tex}
 \input{04zakljucak.tex}
+
+% =========
+% Bibliography
+% =========
 \renewcommand\bibname{Reference}
 \printbibliography
 \end{document}
