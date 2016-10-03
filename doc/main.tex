@@ -25,14 +25,14 @@
     rectangle split part align={center,left}
 }}
 \usepackage{listings} % Code listings.
+\input{clj-latex.tex}
 \lstset{
-    language=SQL,
     captionpos=b,
     basicstyle=\ttfamily\scriptsize,
     numberstyle=\tiny,
     numbers=none,
-    aboveskip=\bigskipamount,
-    belowskip=\bigskipamount,
+    %aboveskip=\bigskipamount,
+    %belowskip=\bigskipamount,
     backgroundcolor=\color{gray!10},
     frame=shadowbox,
     tabsize=2,
@@ -42,10 +42,13 @@
     showstringspaces=false,
     breaklines=true,
     breakatwhitespace=true,
-    framextopmargin=2pt,
-    framexbottommargin=2pt,
+    %framextopmargin=2pt,
+    %framexbottommargin=2pt,
     extendedchars=false,
-    inputencoding=utf8
+    inputencoding=utf8,
+    keywordstyle=\color{blue},
+    stringstyle=\color{purple},
+    commentstyle=\color{olive}
 }
 \graphicspath{{images/}}
 \addbibresource{literatura.bib} % References.

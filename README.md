@@ -63,6 +63,7 @@ manually:
 * UI for adding assignments
 * Time limit for assignments, date limit for taking assignments (from-to)
 * Assignments that can be taken only by students enrolled in the course
+* Pagination for completed tests (admin page)
 ## License
 
 Copyright © 2016 Dimitrije Radojević

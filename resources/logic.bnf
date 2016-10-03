@@ -15,6 +15,6 @@ Predicate = PRED <'('> Arguments <')'>
 Argument = LITERAL | Predicate
 
 LITERAL = #'[a-z]+'
-PRED = #'[A-Z][a-z]*'
+PRED = #'[A-Z][a-zA-Z]*'
 FOREACH = <#'\\A'>
 EXISTS = <#'\\E'>

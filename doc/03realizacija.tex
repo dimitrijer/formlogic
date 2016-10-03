@@ -1,4 +1,180 @@
 \chapter{Realizacija sistema}\label{realizacija}
 U ovom poglavlju nalazi se par odabranih realizacija stavki koje su predstavljale veći izazov za implementaciju, uz način na koji su izazovi prevaziđeni i navedene isečke izvornog koda.
 
-\section{Anti-forgery token za AJAX zahteve}
+\section{Uprošćavanje stabla parsiranja}
+Kao što je napomenuto, za parsiranje logičkih jednačina korišćen je parser bezkontekstne gramatike. U nastavku je izložena EBNF forma korišćene gramatike:
+\begin{verbatim}
+WellFormedFormula = QuantifiedFormula | Disjunction
+QuantifiedFormula = SingleQuantifier QuantifiedFormula |
+                    SingleQuantifier <'{'> QuantifiedFormula <'}'> |
+                    SingleQuantifier <'{'> Disjunction <'}'>
+<SingleQuantifier> = Quantifier | QuantifierNegation
+Quantifier = FOREACH LITERAL | EXISTS LITERAL
+QuantifierNegation = <'~'> Quantifier
+Disjunction = Disjunction <'||'> Conjunction | Conjunction
+Conjunction = Conjunction <'&&'> Implication | Implication
+Implication = Implication <'=>'> Term | Term
+Negation = <'~'> Term
+Term = <'('> WellFormedFormula <')'> | Negation | Predicate | LITERAL
+Predicate = PRED <'('> Arguments <')'>
+<Arguments> = Arguments <','> Argument | Argument
+Argument = LITERAL | Predicate
+
+LITERAL = #'[a-z]+'
+PRED = #'[A-Z][a-zA-Z]*'
+FOREACH = <#'\\A'>
+EXISTS = <#'\\E'>
+\end{verbatim}
+Prvi deo gramatike čine neterminali, a drugi deo čine terminali, definisani regularnim izrazima. Elementi u uglastim zagradama se \textbf{ne pojavljuju} unutar stabla parsiranja, ali inače čine deo gramatike.
+
+Parser kao rezultat parsiranja izbacuje stablo parsiranja u \textit{Hiccup} formatu. Ovaj format sastoji se od ugnežđenih Clojure vektora. Svaki vektor obeležava čvor stabla. Prvi element svakog vektora jeste ključna reč koja obeležava terminal ili neterminal, a ostatak vektora su deca čvora, koja i sama mogu biti vektori. Radi pojašnjenja, daje se primer stabla parsiranja prostog logičkog izraza:
+\begin{equation}
+\label{eq:logic}
+\forall x \; (\neg x \land y) \implies \mathit{Inv}(y, x)
+\end{equation}
+U datoj gramatici, ovaj izraz se zapisuje sa \verb|\A x {(~x && y) => Inv(y, x)}|, a stablo parsiranja ovog izraza je:
+\begin{verbatim}
+[:WellFormedFormula
+ [:QuantifiedFormula
+  [:Quantifier [:FOREACH] [:LITERAL "x"]]
+  [:Disjunction
+   [:Conjunction
+    [:Implication
+     [:Implication
+      [:Term
+       [:WellFormedFormula
+        [:Disjunction
+         [:Conjunction
+          [:Conjunction
+           [:Implication [:Term [:Negation [:Term [:LITERAL "x"]]]]]]
+          [:Implication [:Term [:LITERAL "y"]]]]]]]]
+     [:Term
+      [:Predicate
+       [:PRED "Inv"]
+       [:Argument [:LITERAL "y"]]
+       [:Argument [:LITERAL "x"]]]]]]]]]
+\end{verbatim}
+Kao što se može primetiti, dubina ugnežđivanja za prost logički izraz je veoma velika. Ovo je posledica činjenice da se u gramatici neki neterminali mogu zameniti nekim drugim, hijerarhijski nižim neterminalnom. Na primer, startni neterminal \texttt{WellFormedFormula} može da se zameni sa {\texttt{Disjunction}, a taj neterminal može da se zameni sa \texttt{Conjunction}, koji može da se zameni sa \texttt{Implication}, te onda sa \texttt{Term} itd.
+
+Kako bi se olakšala dalja obrada stabla, i izbegla nepotrebna redundantnost, implementirana je funkcija koja skraćuje dubinu stabla, tako što eliminiše čvorove koji imaju samo jedno dete, sa određenim izuzecima. Skidaju se čvorovi koji predstavljaju neterminale osim \texttt{Negation} i \texttt{QuantifierNegation}, koji po definiciji imaju samo jedno dete. U listingu \ref{lst:simplify-tree} dat je izvorni kod ove funkcije.
+\lstinputlisting[float, floatplacement=h, caption=Funkcija za uprošćavanje stabla parsiranja, label=lst:simplify-tree, language=Clojure]{listings/simplify-tree.clj}
+
+Funkcija se oslanja na funkciju \texttt{transform} Instaparse biblioteke, koja prima mapu ključnih reči na funkcije. Ta funkcija potom prolazi kroz stablo, i menja čvorove sa rezultatima odgovarajućih funkcija. U ovom slučaju, za svaki neterminal mapira se povratna vrednost funkcije \texttt{simplify-tree*}, sa tim neterminalom kao argumentom. \texttt{simplify-tree*} pravi funkciju koja vraća prvo dete čvora, ukoliko čvor ima samo jedno dete, ili vraća originalni čvor, ukoliko čvor ima više dece.
+
+Bitno je napomenuti da, u skladu sa duhom funkcionalnog programiranja, ne postoje stanja drveta parsiranja, već svaka operacija (poziv funkcije) rezultuje novim stablom. Uprošćeno stablo parsiranja koje vraća funkcija \texttt{simplify-tree} za izraz \ref{eq:logic} izgleda ovako:
+\begin{verbatim}
+[:QuantifiedFormula
+ [:Quantifier [:FOREACH] [:LITERAL "x"]]
+ [:Implication
+  [:Conjunction [:Negation [:LITERAL "x"]] [:LITERAL "y"]]
+  [:Predicate [:PRED "Inv"] [:LITERAL "y"] [:LITERAL "x"]]]]
+\end{verbatim}
+
+Dobijeno stablo je daleko prostije od početnog, i pogodno za dalju transformaciju. Zbog ovoga je prvi korak pri svođenju na KNF uprošćavanje stabla, što se može videti u telu funkcije \texttt{wff->cnf} (\ref{lst:wff}). Ova funkcija svodi datu jednačinu na KNF formu i koristi \textit{threading} Clojure makro da bi ,,provukla'' stablo kroz transformišuće funkcije.
+\lstinputlisting[float, floatplacement=h, caption=Funkcija za svođenje na KNF formu, label=lst:wff, language=Clojure]{listings/wff.clj}
+
+\section{Prilagođivanje HTML stranica za neke statusne kodove}
+Doslednom izgledu web aplikacije umnogome doprinose prilagođene stranice u slučaju da resurs nije nađen (status 404) ili da se dogodila neka interna greška (status 500). U slučaju greške, takođe je korisno prikazati i \textit{stack trace} korisniku kako bi administratori imali više informacija za otklanjanje problema.
+
+\lstinputlisting[float, floatplacement=h, caption=Implementacija prilagođene 404 stranice, label=lst:routes, language=Clojure]{listings/routes.clj}
+Jetty nudi podrazumevane stranice koje se vraćaju u ovakvim slučajevima, koje nisu u skladu sa izgledom izrađene web aplikacije. Međutim, željeno ponašanje je moguće definisati preko Compojure ruta. Compojure rute se razrešavaju redom kojim su navedene. Ukoliko se nijedna ruta ne poklopi sa zahtevom, Compojure se obraća Jetty serveru, koji onda vraća 404 status sa podrazumevanom stranicom. Umetanjem posebne rute \texttt{compojure.route/not-found}, koja prihvata sve zahteve, na kraj liste ruta, obezbeđeno je izvršavanje hendlera za te rute ukoliko se nijedna ruta pre nje ne poklopi sa zahtevom. Ova ruta implementira prost hendler koji vraća prilagođenu 404 stranicu. Kod je dat na listingu \ref{lst:routes}.
+
+\lstinputlisting[float, floatplacement=h, caption=Implementacija prilagođene 500 stranice, label=lst:exc, language=Clojure]{listings/exc.clj}
+Situacija za stranicu sa greškom je malo komplikovanija, jer se ona pojavljuje ukoliko je došlo do neočekivane greške, na primer, neuhvaćenog izuzetka. Takođe, trik sa rutama ovde ne pomaže, jer se izuzeci koji su prošli van hendlera hvataju unutar Jetty koda. Ovde u pomoć uskače Compojure koncept koji se naziva \textit{middleware}. Prosto rečeno, middleware je funkcija omotač koja prva dobija kontrolu toka, poziva obmotani hendler, a potom dobija nazad kontrolu toka kada se hendler izvrši. Ovakva funkcija ima mogućnost da promeni strukturu zahteva pre nego što se on prosledi hendleru, ili da promeni ono što je hendler vratio kao odgovor.
+
+Vredno je napomenuti da se Compojure middleware funkcije mogu obmotavati jedna oko druge. Ovaj koncept jako podseća na dekoratore u OOP svetu.
+
+Za potrebe prikazivanja prilagođene stranice u slučaju greške, napravljena je middleware funkcija \texttt{wrap-catch-exceptions} koja obmotava sve rute, a koja hvata sve tipove izuzetaka koji se dese u unutrašnjim hendlerima. Ukoliko se uhvati takav izuzetak, kao odgovor se vraća status 500, a kao telo se navodi string koji sadrži informacije o izuzetku, zajedno sa \textit{stack trace}-om.
+
+Pored ove funkcije postoji i \texttt{wrap-500} middleware, koji presreće sve odgovore sa statusnim kodom 500, telo menja punom HTML prilagođenom stranicom, i postavlja neophodna HTML zaglavlja. Izvorni kod je priložen u listingu \ref{lst:exc}, a izgled obe stranice se može videti na slici \ref{fig:exc}.
+
+Autor je prvobitno napravio previd time što je hvatao samo izuzetke tipa \texttt{java.lang.Exception}, pa se ponekad desilo da ,,isplivaju'' izuzeci koji nasleđuju klasu \texttt{Throwable}. Tada bi se prikazala standardna Jetty stranica za greške.
+\begin{figure}[hb]
+\centering
+\fbox{\includegraphics[width=0.95\textwidth]{404}}
+\fbox{\includegraphics[width=0.95\textwidth]{500}}
+\caption{Izgled prilagođenih stranica za statusne kodove 404 (\textit{gore}) i 500 (\textit{dole})}
+\label{fig:exc}
+\end{figure}
+
+\section{SQL upit za dohvatanje završenih testova}
+Na početnoj administratorskoj stranici moguće je dohvatiti sve završene testove na osnovu email naloga studenta ili imena testa. Za svaki test treba sračunati i procenat uspešnosti.
+
+Ova operacija uključuje nekoliko akcija:
+\begin{itemize}
+\item dohvatiti završene test na osnovu primarnog ključa studenta ili testa iz tabele \texttt{assignment\_progress},
+\item dohvatiti ukupan broj pitanja za svaki pronađeni test - ovo su statički podaci koji se nalaze u shemi \texttt{static},
+\item dohvatiti ukupan broj pitanja na koja je student dao tačan odgovor iz tabele \texttt{question\_progress}, i, konačno,
+\item izdvojiti i sračunati relevantne podatke i poslati ih nazad klijentu
+\end{itemize}
+
+\lstinputlisting[float, floatplacement=h, caption=SQL upit za dovlačenje završenih testova, label=lst:query, language=SQL]{listings/get.sql}
+Umesto pozivanja pojedinačnih upita za svaki od ovih koraka, autor se odlučio za pristup gde će svi podaci biti dohvaćeni odjednom, u svom finalnom obliku. Za ovaj podvig je korišćena funkcionalnost Postgres-a pod imenom \textit{Common Table Expressions} (CTE). Ona omogućava pravljenje pod-upita unutar jednog upita, koje je moguće referencirati iz glavnog upita, i koristiti kao punopravne tabele. CTE izraze je takođe moguće referencirati i iz drugih CTE izraza. Osim ovoga, podržavaju i rekurziju.
+
+Implementirani upit dat je u listingu \ref{lst:query}. Postoje tri CTE izraza koji dohvataju određene komponente neohodne za konstrukciju konačnih rezultata:
+\begin{enumerate}
+\item Prvi CTE dovlači gotove progrese (instance testa) za određeni test. Kriterijum završenog testa jeste da je kolona \texttt{completed\_at} popunjena.
+\item Drugi CTE za svaki red iz prvog dovlači progres za sva pitanja za tu instancu testa iz \texttt{question\_progress} tabele. Ovaj upit ih nakon toga grupiše preko \texttt{GROUP BY} klauzule u dva reda po progresu, po jedan za svako stanje \texttt{boolean} kolone \texttt{correct}, i broji sve redove koji su na ovaj način grupisani. Rezultat se nalazi u \texttt{cnt} koloni. Na ovaj način su za svaku instancu testa prebrojani tačni i netačni odgovori. Drugi CTE ima ukupno $2 \times N$ redova, gde je $N$ broj redova u prvom CTE izrazu.
+\item Treći CTE prosto sabira \texttt{cnt} kolonu za svaki progres iz drugog CTE izraza i rezultat stavlja u \texttt{total} kolonu. Ovo postiže tako što redove grupiše po ID koloni. Treći CTE ima $N$ redova, po jedan za svaki red iz prvog CTE izraza.
+\end{enumerate}
+
+Konačno, rezultat se dobija tako što se iz prvog CTE izraza pokupe ID progresa, datum početka izrade, datum kraja izrade i email nalog studenta (ovo se zapravo dobija preko \texttt{INNER JOIN}-a sa \texttt{user} tabelom na koloni \texttt{user\_id}). Poslednja kolona sadrži ocenu uspešnosti koja se sračunava kao količnik odgovarajuće kolone \texttt{cnt} iz drugog CTE izraza, za koju je \texttt{correct} tačan, i ukupnog broja pitanja iz trećeg CTE izraza, tj. odgovarajuće kolone \texttt{total}. Na kraju se rezultati sortiraju prema datumu predaje testa, i vraćaju klijentu u JSON formi.
+
+Prva verzija upita je odgovarajući red iz drugog CTE izraza birala preko izraza \texttt{WHERE questions.correct = true} u glavnom upitu, a drugi CTE se stapao sa prvim preko \texttt{INNER JOIN}-a. Međutim, na ovaj način su preskakani testovi na kojima studenti nisu odgovorili tačno ni na jedno pitanje. Rešenje je bilo da se koristi \texttt{LEFT OUTER JOIN} sa drugim CTE izrazom, uz dodatno ograničenje da se tabele stapaju samo za redove gde je \texttt{correct} kolona označena kao tačna. Ova vrsta stapanja će za testove gde nema nijedno tačno pitanje umetnuti \texttt{NULL} vrednosti na mesta gde fale kolone, a \texttt{COALESCE} unutar izraza za računanje uspešnosti će se pobrinuti da se takva vrednost pretvori u nulu u aritmetičkom izrazu.
+
+\section{Raspakivanje Postgres nizova}
+Atributi nekih entiteta u bazi su pohranjeni kao nizovi, na primer, kolone \texttt{choices} i \texttt{answers} unutar \texttt{static.question} tabele. Funkcije koje učitavaju takve entitete iz baze, generisane od strane YeSQL biblioteke na osnovu SQL skripti, vraćaju rezultate u vidu Clojure mapa. Međutim, nizovi unutar tih mapa se vraćaju kao instance \texttt{org.postgresql.jdbc4.Jdbc4Array} klase. Kao primer je naveden izlaz funkcije \texttt{db/find-questions-by-task-id}:
+\begin{verbatim}
+({:answers #<org.postgresql.jdbc4.Jdbc4Array@3a1205f7 {2}>,
+  :body "Koje je boje nebo?",
+  :choices #<org.postgresql.jdbc4.Jdbc4Array@29ca0b4d
+  {zute,crvene,plave}>,
+  :id 1,
+  :ord 1,
+  :task_id 1,
+  :type "single"}
+ {:answers #<org.postgresql.jdbc4.Jdbc4Array@242f86ce {0,1,4}>,
+  :body "Šta od navedenog NIJE satelit?",
+  :choices #<org.postgresql.jdbc4.Jdbc4Array@6e8b2491
+  {Jupiter,Demetra,Io,Kalisto,Orfej}>,
+  :id 2,
+  :ord 2,
+  :task_id 1,
+  :type "multiple"}
+ {:answers #<org.postgresql.jdbc4.Jdbc4Array@441ca90a {0}>,
+  :body "Kako se zove glavni grad Estonije?",
+  :choices #<org.postgresql.jdbc4.Jdbc4Array@3df542a7 {Talin}>,
+  :id 3,
+  :ord 3,
+  :task_id 1,
+  :type "fill"})
+\end{verbatim}
+Problem nastaje ukoliko se nad vrednostima polja koja predstavljaju pomenute instance pokuša pozvati metoda \texttt{getArray()}. Po JDBC dokumentaciji\footnote{\url{https://docs.oracle.com/javase/tutorial/jdbc/basics/array.html}}, tada dolazi do materijalizacije elemenata niza, tj. tada se oni zapravo dovlače iz baze. Međutim, ukoliko se ova metoda pozove van JDBC transakcije, baca se izuzetak.
+
+\lstinputlisting[float, floatplacement=h, caption=Funkcija za raspakivanje vrednosti JDBC nizova unutar transakcije, label=lst:array, language=Clojure]{listings/array.clj}
+Rešenje ovog problema jeste da se vrednosti unutar JDBC niza raspakuju dok još traje transakcija. YeSQL ima mogućnost da se funkcijama koje predstavljaju upite prosledi funkcija za transformisanje redova. Ova funkcija se izvršava nad svakim dovučenim redom pre nego što se transakcija zatvori, i vraća rezultat obrade. Stoga je implementirana funkcija \texttt{db/unwrap-arrays}, priložena u listingu \ref{lst:array}, koja prolazi kroz sve unose mape koja predstavlja jedan red iz tabele i raspakuje JDBC nizove, ukoliko naiđe na njih.
+
+Kada se pomenuta \texttt{db/find-questions-by-task-id} funkcija pozove sa funkcijom za transformisanje redova \texttt{db/unwrap-arrays}, na mestu JDBC nizova dobijaju se standardni Clojure vektori, unutar kojih su raspakovane vrednosti:
+\begin{verbatim}
+({:answers [2],
+  :body "Koje je boje nebo?",
+  :choices ["zute" "crvene" "plave"],
+  :id 1,
+  :ord 1,
+  :task_id 1,
+  :type "single"}
+ {:answers [0 1 4],
+  :body "Šta od navedenog NIJE satelit?",
+  :choices ["Jupiter" "Demetra" "Io" "Kalisto" "Orfej"],
+  :id 2,
+  :ord 2,
+  :task_id 1,
+  :type "multiple"}
+ {:answers [0],
+  :body "Kako se zove glavni grad Estonije?",
+  :choices ["Talin"],
+  :id 3,
+  :ord 3,
+  :task_id 1,
+  :type "fill"})
+\end{verbatim}
