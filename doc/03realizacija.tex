@@ -2,6 +2,7 @@
 U ovom poglavlju nalazi se par odabranih realizacija stavki koje su predstavljale veći izazov za implementaciju, uz način na koji su izazovi prevaziđeni i navedene isečke izvornog koda.
 
 \section{Uprošćavanje stabla parsiranja}
+\label{sec:syntax}
 Kao što je napomenuto, za parsiranje logičkih jednačina korišćen je parser bezkontekstne gramatike. U nastavku je izložena EBNF forma korišćene gramatike:
 \begin{verbatim}
 WellFormedFormula = QuantifiedFormula | Disjunction
@@ -178,3 +179,15 @@ Kada se pomenuta \texttt{db/find-questions-by-task-id} funkcija pozove sa funkci
   :task_id 1,
   :type "fill"})
 \end{verbatim}
+
+\section{\textit{Anti-forgery} token}
+Kao deo standardnih \textit{middleware} funkcija, Compojure obezbeđuje i zaštitu od \textit{Cross-site Request Forgery} napada. Mete ovih napada su HTML obrasci koji izvršavaju POST zahteve ka serveru. Ukratko, napad se ogleda u tome da ulogovani korisnici mimo svoje volje izvrše neke akcije na serveru. Ovo se radi tako što se na stranom sajtu napravi obrazac čiji \texttt{action} atribut gađa resurs na sajtu mete. Nakon toga se metodama socijalnog inženjeringa (na primer, skraćeni link ka stranom sajtu napadač šalje ulogovanom korisniku preko \textit{chat} poruke) ulogovani korisnik navede da izvrši \texttt{submit} akciju na stranom formularu. Kako je korisnik autentifikovan, server prihvata akciju kao validnu, te je izvršava.
+
+Na primeru izrađene aplikacije, navedeni napad bi, na primer, primorao korisnika da preda test pre nego što je test gotov. Ili bi na silu započeo izradu nekog testa bez saglasnosti korisnika.
+
+Zaštita od ovakvih napada se vrši tako što se na svim obrascima sajta generiše skriveno polje koje sadrži nasumice generisanu vrednost zvanu \textit{anti-forgery token}. Ovaj token se prilikom \texttt{submit} akcije šalje sa ostalim parametrima obrasca. Server prilikom obrade zahteva proverava da li vrednost tokena koju je klijent poslao odgovorara vrednosti tokena generisanog za tu sesiju, i izvršava zahteva \textbf{samo ako} se vrednosti poklapaju.
+
+\lstinputlisting[float, floatplacement=h, caption=JavaScript funkcija za slanje unete jednačine na server, label=lst:csrf, language=JavaScript]{listings/csrf.js}
+Ovim se efektivno eliminiše pretnja od CSRF napada. Međutim, ovo takođe znači da će svi POST zahtevi ka serveru koji nemaju token biti odbijeni, pa čak i oni koji nisu rezultat \texttt{submit} akcije nekog formulara. Ovo je otežavajuća okolnost za izradu pristupnih resursa API-ja za, na primer, dovlačenje izrađenih testova na administratorskoj stranici, ili dovlačenja imena studenata čiji email sadrži unete karaktere (ovaj zahtev se koristi za \texttt{autocomplete} funkcionalnost na administratorskoj stranici).
+
+Kao rešenje su korišćena dva pristupa: korišćenje GET zahteva tamo gde je moguće podatke poslati kao URL parametre, i generisanje CSRF tokena na stranicama koje nemaju formular, a koriste POST zahteve iza scene. Vrednost tokena se tada navodi u standardnom \texttt{X-CSRF-Token} zaglavlju HTTP zahteva. U listingu \ref{lst:csrf} je naveden JavaScript kod koji demonstrira opisanu tehniku, a koristi se za slanje unetih jednačina na server.
