@@ -129,7 +129,7 @@ Kao deo zahteva druge grupe, neophodno je implementirati automatsku konverziju u
 
 \section{Opis korišćenih tehnologija}
 \subsection{Izbor jezika}
-Online platforma poput izrađene web aplikacije se može realizovati u gotovo svim višim programskim jezicima današnjice. Prednost svakako imaju jezici koji:
+Online platforma poput izrađene veb aplikacije se može realizovati u gotovo svim višim programskim jezicima današnjice. Prednost svakako imaju jezici koji:
 \begin{itemize}
 \renewcommand\labelitemi{--}
 \item su na dovoljno visokom nivou apstrakcije - na primer, podrška za \textit{garbage collection} je obavezna,
@@ -143,12 +143,12 @@ Međutim, kako autor tokom dužine studija nije imao priliku da izučava još ne
 
 Jedna prednost Clojure-a nad Javom, koju će autor vremenom naučiti da veoma ceni, jeste postojanje \textbf{REPL} (\textit{read-eval-print-loop}) funkcionalnosti. Radi se o interaktivnoj konzoli u kojoj je moguće unositi i evaluirati delove Clojure koda, veoma slično Python interpreteru. Uz činjenicu da su većina Clojure funkcija \textit{pure}\footnote{Čiste funkcije uvek vraćaju isti rezultat za iste argumente, i nemaju bočne efekte.}, REPL omogućava unikatan način razvijanja aplikacije, gde je funkcija osnovna celina razvoja i testiranja.
 
-Izrađena web aplikacija se sastoji od dva snažno spregnuta dela: \emph{frontend} sistema i \emph{backend} sistema. Kao što im ime kaže, frontend deo je zadužen za prezentacioni sloj i obradu unosa, dok je backend sistem zadužen za perzistenciju i serviranje sadržaja, i veći deo poslovne logike.
+Izrađena veb aplikacija se sastoji od dva snažno spregnuta dela: \emph{frontend} sistema i \emph{backend} sistema. Kao što im ime kaže, frontend deo je zadužen za prezentacioni sloj i obradu unosa, dok je backend sistem zadužen za perzistenciju i serviranje sadržaja, i veći deo poslovne logike.
 
 \subsection{Backend tehnologije}
 
 \paragraph{HTTP server}
-\emph{Ring}\cite{ring} je apstrakcija HTTP servera koja preko veoma jednostavnog API-ja\footnote{\url{https://github.com/ring-clojure/ring/blob/master/SPEC}} omogućava korisniku da se fokusira na implementaciju hendlera (tj. poslovne logike), bez ulaženja u detalje HTTP protokola. API definiše HTTP zahtev i HTTP odgovor kao dve obične Clojure mape, a hendlere kao funkcije koje imaju jedan argument (mapu zahteva) i vraćaju odgovor kao mapu. Zbog toga što Ring predstavlja apstrakciju HTTP servera, Ring web aplikacije mogu da se distribuiraju kao WAR aplikacije i pokreću unutar standardnih kontejnera za web aplikacije (npr. Tomcat), ili da se pokrenu same pomoću \textit{embedded} Jetty web servera, što je za potrebe ove web aplikacije više nego dovoljno.
+\emph{Ring}\cite{ring} je apstrakcija HTTP servera koja preko veoma jednostavnog API-ja\footnote{\url{https://github.com/ring-clojure/ring/blob/master/SPEC}} omogućava korisniku da se fokusira na implementaciju hendlera (tj. poslovne logike), bez ulaženja u detalje HTTP protokola. API definiše HTTP zahtev i HTTP odgovor kao dve obične Clojure mape, a hendlere kao funkcije koje imaju jedan argument (mapu zahteva) i vraćaju odgovor kao mapu. Zbog toga što Ring predstavlja apstrakciju HTTP servera, Ring veb aplikacije mogu da se distribuiraju kao WAR aplikacije i pokreću unutar standardnih kontejnera za veb aplikacije (npr. Tomcat), ili da se pokrenu same pomoću \textit{embedded} Jetty veb servera, što je za potrebe ove veb aplikacije više nego dovoljno.
 
 \paragraph{Rutiranje}
 Ring API je previše jednostavan za neke iole ozbiljnije zahteve, te je zbog toga nastao \emph{Compojure}\cite{compojure}, koji je \textit{routing} biblioteka za Clojure. Jednostavno rečeno, ova biblioteka prosleđuje određene HTTP zahteve (\texttt{GET}, \texttt{POST} itd.) za URI putanjama (tj. resursima) hendlerima koji ih obrađuju. Tako je, na primer, moguće napraviti hendler koji vraća početnu stranicu ukoliko se ka serveru uputi HTTP \texttt{GET} zahtev za \texttt{/index.html} resursom. Međutim, \texttt{POST} zahtevi ka istom resursu će biti odbijeni sa statusom \texttt{403 Forbidden}. Ovaj postupak uparivanja resursa i hendlera se naziva rutiranje.
@@ -177,6 +177,6 @@ Za prikazivanje logičkih jednačina koristi se JS biblioteka \emph{KaTeX}\footn
 
 Iako se za kompajliranje i pakovanje Clojure aplikacija može koristiti Maven, \emph{Leiningen}\cite{leiningen} je alatka izbora za veliku većinu Clojure projekata. Popularan je zbog izuzetno lake konfiguracije - konfiguriše se preko jednog Clojure izvornog fajla u kome se specificira ime projekta i zavisnosti, koje se podrazumevano dovlače iz Maven centralnog repozitorijuma, kao i sa \url{http://clojars.org}. Preko \texttt{lein} komandne alatke moguće je: pokrenuti REPL (\texttt{lein repl}), napraviti izvršnu JAR arhivu, spakovanu sa svim zavisnostima (\texttt{lein uberjar}), pokrenuti server (\texttt{lein ring server-headless}) ili glavnu metodu projekta (\texttt{lein run}), kao i još mnogo toga.
 
-Pomenuta \emph{uberjar} arhiva veoma je pogodna za distribuciju na ciljnom serveru web aplikacije. Kako su sve zavisnosti spakovane, jedino što je potrebno da se web aplikacija pokrene jeste podešeno Java izvršno okruženje.
+Pomenuta \emph{uberjar} arhiva veoma je pogodna za distribuciju na ciljnom serveru veb aplikacije. Kako su sve zavisnosti spakovane, jedino što je potrebno da se veb aplikacija pokrene jeste podešeno Java izvršno okruženje.
 
-Međutim, kako web aplikacija ima neke dodatne zahteve (Postgres server, napravljena baza, otvoren port u \textit{firewall} podešavanjima), napravljena je Vagrant skripta koja sve ovo radi kao deo \textit{provisioning}-a VirtualBox virtuelne instance. Dovoljno je pokrenuti \texttt{vagrant up} da bi se dobilo funkcionalno, lokalno okruženje u kojoj web aplikacija sluša na lokalnoj mreži na IP adresi \texttt{192.168.33.10:3000}. Instanca je zasnovana na CentOS 7 operativnom sistemu.
+Međutim, kako veb aplikacija ima neke dodatne zahteve (Postgres server, napravljena baza, otvoren port u \textit{firewall} podešavanjima), napravljena je Vagrant skripta koja sve ovo radi kao deo \textit{provisioning}-a VirtualBox virtuelne instance. Dovoljno je pokrenuti \texttt{vagrant up} da bi se dobilo funkcionalno, lokalno okruženje u kojoj veb aplikacija sluša na lokalnoj mreži na IP adresi \texttt{192.168.33.10:3000}. Instanca je zasnovana na CentOS 7 operativnom sistemu.
