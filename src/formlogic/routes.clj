@@ -53,6 +53,8 @@
   (POST "/login" [email password :as req] (controllers/login email password req))
   (GET "/register" [] (views/register-page))
   (POST "/register" [email] (controllers/register email))
+  (GET "/latex" [] (views/latex-page))
+  (POST "/latex" [formula] (controllers/parse-logic-formula formula))
   (wrap-routes #'user-routes handlers/wrap-user-session-check)
   (route/not-found views/not-found-page))
 

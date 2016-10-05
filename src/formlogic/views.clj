@@ -21,7 +21,9 @@
                       "/js/angular-sanitize.min.js")
           (include-js "/js/ui-bootstrap-tpls-2.1.4.min.js")
           (include-js "/js/script.js")
+          (include-js "/js/katex.min.js")
           (include-css "/css/style.css")
+          (include-css "/css/katex.min.css")
           (include-css "/css/bootstrap.min.css")
           [:body [:div {:class "container"} contents]]]))
 
@@ -223,7 +225,7 @@
   [:div {:class "form-group"}
    (question-label question)
    (text-area (merge {:class "form-control" :rows "3"}
-                    (when admin? {:disabled "true"}))
+                     (when admin? {:disabled "true"}))
               (str "question" id "-fill")
               (first (:answers progress)))
    (when admin? (correct-radio-group question))])
@@ -315,18 +317,18 @@
                  cnt (:cnt category)]]
        [:div {:class "panel-primary" :uib-accordion-group ""}
         [:uib-accordion-heading
-           (h category-name) [:span {:class "pull-right badge"} cnt]]
+         (h category-name) [:span {:class "pull-right badge"} cnt]]
         [:table {:class "table table-hover"}
-          [:thead [:tr
-                   [:th "Ime"]
-                   [:th "Stranica"]
-                   [:th "Pitanja"]
-                   [:th "Započet"]
-                   [:th "Progres"]
-                   [:th "Ocena"]]]
-          [:tbody
-           (for [assignment (db/load-assignments-by-category {:category category-name})]
-             (render-assignment user assignment))]]])]))
+         [:thead [:tr
+                  [:th "Ime"]
+                  [:th "Stranica"]
+                  [:th "Pitanja"]
+                  [:th "Započet"]
+                  [:th "Progres"]
+                  [:th "Ocena"]]]
+         [:tbody
+          (for [assignment (db/load-assignments-by-category {:category category-name})]
+            (render-assignment user assignment))]]])]))
 
 (defn- modal-template-ok
   [id title ok-label cancel-label & contents]
@@ -501,3 +503,69 @@
      [:uib-tabset
       [:uib-tab {:index "0" :heading "Po studentima"} (student-progress-tab)]
       [:uib-tab {:index "1" :heading "Po testovima"} (assignment-progress-tab)]]]))
+
+(defn cnf-page []
+  (let [result 
+    (vector :div {:style "margin: 20px;"}
+        [:script {:type "text/javascript" :src "/js/latex.js"}]
+        [:h2 "Svođenje na KNF"]
+        [:p "Unesite formulu:"]
+        [:div {:class "form-group"
+               :ng-controller "LatexFormController"}
+         (anti-forgery-field)
+         [:div {:class "row"} [:textarea {:type "text"
+                                           :rows 3
+                                           :ng-model "formula"
+                                           :placeholder "Formula"
+                                           :class "form-control"}]]
+          [:div {:style "margin-top: 10px; " :class "row"} [:button {:class "btn btn-primary"
+                    :ng-click "sendFormula()"
+                    :type "button"} "Pošalji"]]
+         [:div {:style "margin-top: 20px;" :class "panel"}
+          [:div {:class "well"
+                 :ng-show "error != null"}
+           [:p {:class "red" :style "white-space: pre;"} "{{ error }}"]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "0. Početna formula"]
+           [:span {:id "katexEquation0" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "1. Eliminisanje implikacija"]
+           [:span {:id "katexEquation1" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "2. Spuštanje negacija do atomskog nivoa"]
+           [:span {:id "katexEquation2" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "3. Zamena egzistencijalnih kvant. f-jama"]
+           [:span {:id "katexEquation3" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "4. Preimenovanje varijabli"]
+           [:span {:id "katexEquation4" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "5. Premeštanje univerzalnih kvant. na početak"]
+           [:span {:id "katexEquation5" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "6. Spuštanje disjunkcija do atomskog nivoa"]
+           [:span {:id "katexEquation6" :class "katex"}]]
+          [:div {:class "row"
+                 :style "overflow: auto;"
+                 :ng-show "error == null"}
+           [:h4 "7. Preimenovanje varijabli (ponovo)"]
+           [:span {:id "katexEquation7" :class "katex"}]]
+          ]])]
+    
+    (log/spy result)
+    result))

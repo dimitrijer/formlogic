@@ -4,20 +4,25 @@
            [clojure.tools.logging :as log]
            [clojure.string :as str]
            [clojure.java.jdbc :as jdbc]
+           [instaparse.core :as insta]
            [cheshire.core :as json]
            [formlogic.config :refer [cget]]
-           [formlogic.parser :refer [char-range]]
+           [formlogic.parser :as parser]
            [formlogic.views :as views]
+           [formlogic.renderer :as renderer]
            [formlogic.db :as db])
   (use [hiccup.core :only (h html)]))
 
-(defn validate-email
+(defn- validate-email
   "Oh, the horror..."
   [email]
   (let [pattern #"[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"]
     (and (string? email) (re-matches pattern email))))
 
-(defn login [email password-md5 {session :session :as req}]
+(defn login
+  "Tries to login user with provided credentials. If succcessful, attaches user
+  to the session."
+  [email password-md5 {session :session}]
   (if (validate-email email)
     ;; Pull user from DB.
     (if-let [user (db/unique-result db/find-user-by-email {:email (str/lower-case email)})]
@@ -28,26 +33,29 @@
             (log/debug "User" email "logged in.")
             (-> (resp/ok {:user-id (:id user)}) (assoc :session session)))
           (do
-            (log/debug "User" email "tried to login with wrong password.")
+            (log/warn "User" email "tried to login with wrong password.")
             (resp/forbidden {:alert (html "Pogrešna lozinka!")}))))
       (do
-        (log/debug "User" email "tried to login, but is not registered.")
+        (log/warn "User" email "tried to login, but is not registered.")
         (resp/forbidden {:alert (html "Korisnik " [:strong email] " nije registrovan!")})))
     (do
       (log/error "User" email "tried to login, but does not match email pattern!")
       (resp/forbidden {:alert "Navedeni email je pogrešnog formata!"}))))
 
-(def password-alphabet (concat (char-range \a \z)
-                               (char-range \A \Z)
-                               (char-range \0 \9)))
+(def ^:private password-alphabet (concat (parser/char-range \a \z)
+                                         (parser/char-range \A \Z)
+                                         (parser/char-range \0 \9)))
 
-(defn generate-password
+(def ^:private password-length 10)
+
+(defn- generate-password
   [length]
   (apply str (take length (repeatedly #(rand-nth password-alphabet)))))
 
-(def password-length 10)
-
-(defn register [email]
+(defn register
+  "Registers a user with provided email account by sending an email with random
+  password to provided email."
+  [email]
   (if (validate-email email)
     (let [password (generate-password password-length)
           send-to (if (cget :production) email "templaryum@gmail.com")
@@ -67,6 +75,7 @@
       (views/register-page :alert ["Navedeni email je pogrešnog formata!"]))))
 
 (defn logout
+  "De-attaches user from session on logout."
   [session]
   (if-let [user (:user session)]
     (do
@@ -88,26 +97,26 @@
                     (assoc-in [:progress assignment-id] assignment-progress)
                     (assoc-in [:progress assignment-id :assignment] assignment)
                     (assoc-in [:progress assignment-id :user] user))]
-  ;; Attach progress to progress map, within session. Always start from first task.
-  (log/debug (:email (:user session)) "attached progress ID" (:id assignment-progress)
-             "from user" (:emal user))
-  (-> (resp/found (str "/user/progress/" assignment-id "/" 1))
-      (assoc :session session))))
+    ;; Attach progress to progress map, within session. Always start from first task.
+    (log/debug (:email (:user session)) "attached progress ID" (:id assignment-progress)
+               "from user" (:emal user))
+    (-> (resp/found (str "/user/progress/" assignment-id "/" 1))
+        (assoc :session session))))
 
 (defn attach-progress
-  ([session progress-id]
   "First form can only be invoked by admin and is used to attach some student's
   progress to admin's session. Second form is invoked by student sessions."
-  {:pre [(:admin (:user session))]}
-  (if-let [assignment-progress (db/unique-result db/find-progress-by-id
-                                                 {:id progress-id})]
-    (attach-progress-to-session session assignment-progress)
-    (do
-      (log/warn (:email (:user session)) "tried to attach non-existing progress to admin session!")
-      (-> (resp/not-found views/not-found-page)))))
+  ([session progress-id]
+   {:pre [(:admin (:user session))]}
+   (if-let [assignment-progress (db/unique-result db/find-progress-by-id
+                                                  {:id progress-id})]
+     (attach-progress-to-session session assignment-progress)
+     (do
+       (log/warn (:email (:user session)) "tried to attach non-existing progress to admin session!")
+       (-> (resp/not-found views/not-found-page)))))
   ([session user assignment-id]
-  (let [assignment-progress (db/get-or-create-progress user assignment-id)]
-    (attach-progress-to-session session assignment-progress))))
+   (let [assignment-progress (db/get-or-create-progress user assignment-id)]
+     (attach-progress-to-session session assignment-progress))))
 
 (defn- collect-questions
   [assignment-progress task-ord tx]
@@ -145,6 +154,7 @@
                            questions))}))
 
 (defn render-task
+  "Fetches task stuff (along with progress) from DB and renders it on task page."
   [session assignment-id task-ord]
   (if-let [assignment-progress (get-in session [:progress assignment-id])]
     ;; Fetch task, questions and question progress for this page from DB.
@@ -164,13 +174,13 @@
   (case (:type question)
     "single" (vector (get answers (str "question" (:id question)) ""))
     "multiple" (first (filter (complement empty?)
-                      [((comp vec vals select-keys) answers
-                        (map-indexed
-                          (fn
-                            [idx item]
-                            (str "question" (:id question) "-option-" idx))
-                          (:choices question)))
-                       [""]]))
+                              [((comp vec vals select-keys) answers
+                                (map-indexed
+                                  (fn
+                                    [idx item]
+                                    (str "question" (:id question) "-option-" idx))
+                                  (:choices question)))
+                               [""]]))
     "fill" (vector (get answers (str "question" (:id question) "-fill") ""))))
 
 (defn- update-question-progress
@@ -229,6 +239,7 @@
                      tx)
                   questions)))))
 (defn save-task
+  "Saves task progress to DB."
   [session assignment-id task-ord answers continue?]
   (when-let [assignment-progress (get-in session [:progress assignment-id])]
     (jdbc/with-db-transaction [tx db/db-spec]
@@ -281,7 +292,7 @@
                                            (db/find-completed-progresses-for-user
                                              {:id (Integer/parseInt student-id)}))}
                           {:date-format "HH:mm:ss dd/MM/yyyy"})
-   (resp/forbidden)))
+    (resp/forbidden)))
 
 (defn get-progresses-for-assignment
   [user assignment-id]
@@ -290,4 +301,32 @@
                                            (db/find-completed-progresses-for-assignment
                                              {:id (Integer/parseInt assignment-id)}))}
                           {:date-format "HH:mm:ss dd/MM/yyyy"})
-   (resp/forbidden)))
+    (resp/forbidden)))
+
+(defn parse-logic-formula [formula]
+  (try
+    (let [tree (parser/logic-parser formula)]
+      (if-not (insta/failure? tree)
+        (let [step-zero (parser/simplify-tree tree)
+              step-one (parser/transform-implications step-zero)
+              step-two (parser/transform-negations step-one)
+              step-three (parser/transform-existential-quantifiers step-two)
+              step-four (parser/transform-universal-quantifiers step-three)
+              step-five (parser/pull-quantifiers-up step-four)
+              step-six (parser/descend-disjunctions step-five)
+              step-seven (parser/split-on-conjunctions step-six)]
+          (json/generate-string {:step0 (renderer/hiccup->latex step-zero)
+                                 :step1 (renderer/hiccup->latex step-one)
+                                 :step2 (renderer/hiccup->latex step-two)
+                                 :step3 (renderer/hiccup->latex step-three)
+                                 :step4 (renderer/hiccup->latex step-four)
+                                 :step5 (renderer/hiccup->latex step-five)
+                                 :step6 (renderer/hiccup->latex step-six)
+                                 :step7 []}))
+        (do
+          (let [failure (str "Malformatted formula! " (pr-str (insta/get-failure tree)))]
+          (log/error failure)
+          (resp/bad-request {:error failure})))))
+    (catch Exception e
+      (log/error e "Failed to parse formula!")
+      (resp/bad-request {:error "Failed!"}))))

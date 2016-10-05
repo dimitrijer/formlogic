@@ -62,6 +62,12 @@ VALUES (4, 'Formalna logika', 'Ekspertski sistemi');
 
 INSERT INTO static.assignment(id, name, category)
 VALUES (5, 'Svođenje na KNF', 'Ekspertski sistemi');
+INSERT INTO static.task(assignment_id, ord, contents)
+VALUES (5, 1, '(formlogic.views/cnf-page)');
+
+INSERT INTO static.question(task_id, ord, type, body, choices, answers)
+VALUES
+(6, 1, 'single', 'Koji fizičar je otkrio zakon gravitacije?', '{"Isak Njutn", "Johanes Kepler", "Tiho Brahe"}', '{0}'::int2[]);
 
 INSERT INTO static.assignment(id, name, category)
 VALUES (6, 'Zaključivanje rezolucijom', 'Ekspertski sistemi');
