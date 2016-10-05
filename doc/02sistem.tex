@@ -91,7 +91,7 @@ Ukoliko korisnik prekine polaganje u bilo kom trenutku, na primer tako što zatv
 \end{figure}
 
 \subsection{Primer demonstracije: svođenje na KNF}
-Kao jedan primer onoga šta panel sa demonstracijom može da sadrži izrađena je demonstracija svođenja logičkog izraza u KNF formu (slika \ref{fig:cnf}). Panel sadrži tekstualno polje u kome korisnik unosi formulu (za korišćenu sintaksu pogledati sekciju \ref{sec:syntax}). Nakon unosa formula, pritiskom na dugme \textbf{Pošalji}, uneta formula se preko AJAX POST zahteva šalje serveru, koji je svodi na KNF i rezultat vraća u JSON obliku. Rezultat se, po koracima, renderuje kao \LaTeX jednačina.
+Kao jedan primer onoga šta panel sa demonstracijom može da sadrži izrađena je demonstracija svođenja logičkog izraza u KNF formu (slika \ref{fig:cnf}). Panel sadrži tekstualno polje u kome korisnik unosi formulu (za korišćenu sintaksu pogledati sekciju \ref{sec:syntax}). Nakon unosa formula, pritiskom na dugme \textbf{Pošalji}, uneta formula se preko AJAX POST zahteva šalje serveru, koji je svodi na KNF i rezultat vraća u JSON obliku. Rezultat se, po koracima, renderuje kao \LaTeX \space jednačina.
 \begin{figure}[h]
 \centering
 \fbox{\includegraphics[width=0.45\textwidth]{cnf}
@@ -115,7 +115,7 @@ Nakon uspešnog logovanja na sistem, administratorima se prikazuje stranica za p
 \label{fig:assignments-admin}
 \end{figure}
 
-Tokom unošenja email naloga, ili imena testa, prilikom pretrage, izbor se dinamički sužava, tako da je dovoljno otkucati samo mali broj karaktera kako bi se prikazao željeni izbor. Stavke koje odgovaraju upitu se prikazuju u \textit{dropdown} listi, a kroz prikazane stavke se može kretati strelicama gore i dole. Izabrana stavka iz liste se potvrđuje pritiskom na taster Enter, a može se odabrati i klikom. Nakon potvrđivanja izbora, server vraća sve odrađene testove (instance testova koje su predate, pogledati sekciju \ref{section:submit}, i ti rezultati se prikazuju u tabelarnom obliku, ispod formulara za pretragu. Za svaki odrađen test prikazuje se ime testa, email nalog studenta, vreme početka i kraja izrade, ocena u obliku procenta pitanja na koja je student dao tačan odgovor, i, najzad, link za pregled testa (slika \ref{fig:assignments-admin-results}).
+Tokom unošenja email naloga, ili imena testa, prilikom pretrage, izbor se dinamički sužava, tako da je dovoljno otkucati samo mali broj karaktera kako bi se prikazao željeni izbor. Stavke koje odgovaraju upitu se prikazuju u padajućoj listi, a kroz prikazane stavke se može kretati strelicama gore i dole. Izabrana stavka iz liste se potvrđuje pritiskom na taster Enter, a može se odabrati i klikom. Nakon potvrđivanja izbora, server vraća sve odrađene testove (instance testova koje su predate, pogledati sekciju \ref{section:submit}, i ti rezultati se prikazuju u tabelarnom obliku, ispod formulara za pretragu. Za svaki odrađen test prikazuje se ime testa, email nalog studenta, vreme početka i kraja izrade, ocena u obliku procenta pitanja na koja je student dao tačan odgovor, i, najzad, link za pregled testa (slika \ref{fig:assignments-admin-results}).
 \begin{figure}[h]
 \centering
 \fbox{\includegraphics[width=0.95\textwidth]{assignments-admin-student-results}}
@@ -129,7 +129,7 @@ Nakon što administrator odabere jedan od testova za pregled, prikazuje se stran
 \begin{figure}[h]
 \centering
 \fbox{\includegraphics[width=0.95\textwidth]{task-admin}}
-\caption{Izgled stranice za pregled testa - izmena ocene za odgovor se vrši izborom jednog od dva \textit{radio} dugmeta ispod svakog odgovora}
+\caption{Izgled stranice za pregled testa - izmena ocene za odgovor se vrši izborom jednog od dva radio dugmeta ispod svakog odgovora}
 \label{fig:task-admin}
 \end{figure}
 Prva razlika je u tome što administratoru nije dozovljeno da menja odgovore koje je student dao - sve kontrole formulara su onemogućene. Ovim se garantuje da originalni odgovori ne mogu biti menjani nakon što student preda test. Takođe, pri vrhu stranice se prikazuje email nalog studenta koji je predao test.
@@ -186,12 +186,12 @@ answers \hfill & \hfill \texttt{int2[]} \\
 \label{fig:db}
 \end{figure}
 \begin{description}
-\item [\textbf{Assignment}] je \textit{top-level} entitet koji predstavlja jedan test. On sadrži ime i kategoriju testa. Primarni ključ se navodi prilikom ubacivanja u bazu.
+\item [\textbf{Assignment}] je entitet na vrhu hijerarhije koji predstavlja jedan test. On sadrži ime i kategoriju testa. Primarni ključ se navodi prilikom ubacivanja u bazu.
 \item [\textbf{Task}] je entitet koji predstavlja stranicu jednog testa. Ovaj entitet ima egzistencijalnu zavisnost od \textbf{Assignment} entiteta, koja se modeluje stranim ključem u vidu kolone \texttt{assignment\_id}. Sadrži redni broj unutar testa i opcioni sadržaj panele sa demonstracijom. Primarni ključ se generiše automatski, inkrementiranjem sekvence.
 \item [\textbf{Question}] predstavlja jedno pitanje u okviru stranice testa. Ima egzistencijalnu zavisnost od \textbf{Task} entiteta (kolona \texttt{task\_id}). Sadrži redni broj unutar stranice testa, tip pitanja, telo pitanja, ponuđene odgovore u vidu niza stringova, i niz celih brojeva koji označavaju indekse \emph{tačnih} odgovora unutar niza ponuđenih odgovora. Primarni ključ se takođe generiše automatski, inkrementiranjem sekvence. Prilikom ubacivanja reda se proverava da li su indeksi u koloni \texttt{answers} u validnom opsegu koji je definisan brojem elemenata u \texttt{choices} tabeli.
 \end{description}
 
-Prema ovome, dodavanje novih testova svodi se na ubacivanje novog reda koji predstavlja test u \texttt{assignment} tabelu, ubacivanje novog reda za svaku stranicu u testu u \texttt{task} tabelu, i ubacivanje svih pitanja po stranici u \texttt{question} tabelu. Takođe je bitno napomenuti da se sve ove tabele nalaze u \texttt{static} shemi, gde su odvojene sve tabele koje se ne menjaju tokom \textit{runtime}-a aplikacije. Primer ubacivanja testa sa slike \ref{fig:task} je priložen u listingu \ref{lst:insert}.
+Prema ovome, dodavanje novih testova svodi se na ubacivanje novog reda koji predstavlja test u \texttt{assignment} tabelu, ubacivanje novog reda za svaku stranicu u testu u \texttt{task} tabelu, i ubacivanje svih pitanja po stranici u \texttt{question} tabelu. Takođe je bitno napomenuti da se sve ove tabele nalaze u \texttt{static} shemi, gde su odvojene sve tabele koje se ne menjaju tokom izvršavanja aplikacije. Primer ubacivanja testa sa slike \ref{fig:task} je priložen u listingu \ref{lst:insert}.
 \lstinputlisting[float, floatplacement=p, caption=Primer dodavanja jednog testa sa jednom stranicom i tri pitanja, label=lst:insert, language=SQL]{listings/assignment-example.sql}
 
 Kako bi automatsko ocenjivanje radilo i za odgovore u slobodnoj formi, za takva pitanja autor preporučuje da se u \texttt{choices} kolonu ubace tačni odgovori u što više mogućih formi, a da se u \texttt{answers} koloni navedu svi indeksi iz \texttt{choices} niza.
