@@ -90,6 +90,19 @@ Ukoliko korisnik prekine polaganje u bilo kom trenutku, na primer tako što zatv
 \label{fig:task-submit}
 \end{figure}
 
+\subsection{Primer demonstracije: svođenje na KNF}
+Kao jedan primer onoga šta panel sa demonstracijom može da sadrži izrađena je demonstracija svođenja logičkog izraza u KNF formu (slika \ref{fig:cnf}). Panel sadrži tekstualno polje u kome korisnik unosi formulu (za korišćenu sintaksu pogledati sekciju \ref{sec:syntax}). Nakon unosa formula, pritiskom na dugme \textbf{Pošalji}, uneta formula se preko AJAX POST zahteva šalje serveru, koji je svodi na KNF i rezultat vraća u JSON obliku. Rezultat se, po koracima, renderuje kao \LaTeX jednačina.
+\begin{figure}[h]
+\centering
+\fbox{\includegraphics[width=0.45\textwidth]{cnf}
+\includegraphics[width=0.45\textwidth]{cnf-error}}
+\caption{\textit{Levo}: izgled panela sa demonstracijom algoritma svođenja na KNF, \textit{desno}: izgled istog panela u slučaju greške u sintaksi formule}
+\label{fig:cnf}
+\end{figure}
+Ukoliko sintaksa formule nije ispravna, korisniku se prikazuje greška, zajedno sa informacijom o problematičnom delu formule.
+
+Sadržaj celog panela se realizuje kao poziv Clojure funkcije \texttt{views/cnf-page}, unutar kolone sa sadržajem u odgovarajućoj tabeli (pogledati sekciju \ref{sec:panel-contents}).
+
 \section{Opis rada sistema iz perspektive profesora}
 \subsection{Stranica za pretraživanje završenih testova}
 Nakon uspešnog logovanja na sistem, administratorima se prikazuje stranica za pretraživanje i pregled odrađenih testova (URI: \texttt{/user}, slika \ref{fig:assignments-admin}). Ova stranica je podeljena na dva dela. Prvi deo se koristi za pretragu testova preko email naloga studenata, a drugi deo se koristi za pretragu testova po oblastima. Prelaz između ove dve stranice vrši se odabirom zaliska pri vrhu strane.
@@ -126,6 +139,7 @@ Još jedna razlika je u tome što se na ovoj stranici nakon svakog pitanja prika
 Administrator se kreće kroz stranice sa pitanjima na isti način kao student, s tim što se na poslednjoj stranici mesto dugmeta \textbf{Predaj} nalazi dugme \textbf{Kraj}. Klik na ovo dugme administratora vodi na početnu stranicu. Bitno je napomenuti da se ovim ne menja zapisan datum predaje testa. Ovo predstavlja finalnu razliku u odnosu na funkcionalnost stranice kada joj pristupa student.
 
 \subsection{Dodavanje novih testova}
+\label{sec:panel-contents}
 Kako se dodavanje novih testova radi ubacivanjem novih redova u bazi, prvo je neophodno prikazati i objasniti entitete u bazi vezane za testove i relacije između njih (slika \ref{fig:db}).
 \begin{figure}[p]
 \centering
