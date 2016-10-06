@@ -1,4 +1,7 @@
 # Latex temp files.
+*.nav
+*.snm
+*.vrb
 *.aux
 *.fls
 *.log
